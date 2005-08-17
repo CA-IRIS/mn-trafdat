@@ -2,11 +2,11 @@
 
 <!-- ================================================== -->
 <!-- DataServer build file   -->
-<!-- $Revision: 1.1.1.1 $ $Date: 2005/04/26 17:39:00 $  -->
+<!-- $Revision: 1.2 $ $Date: 2005/08/16 19:58:55 $  -->
 <!-- ================================================== -->
 
-<project name="dataserver" default="war" basedir=".">
-    <property name="name" value="dataserver" />
+<project name="trafdat" default="war" basedir=".">
+    <property name="name" value="trafdat" />
     <property name="src.dir" value="WEB-INF/src" />
     <property name="temp.src.dir" value="tempsrc" />
 	<property name="src.base" value="src"/>

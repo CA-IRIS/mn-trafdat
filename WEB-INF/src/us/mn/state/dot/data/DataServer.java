@@ -25,6 +25,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpUtils;
 
 /**
  * @author john3tim
@@ -34,11 +35,14 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class DataServer extends HttpServlet {
 
+	/** Maximum length of a data filename */
+	protected final int MAX_FILENAME_LENGTH = 20;
+	
 	/** Traffic file extension */
 	static protected final String EXT = ".traffic";
 
 	/** Path to directory containing traffic data files */
-	protected final String basePath = "/traffic";
+	protected final String basePath = "/data/traffic";
 	
 	/** Initializes the servlet */
 	public void init(ServletConfig config) throws ServletException {
@@ -62,7 +66,13 @@ public class DataServer extends HttpServlet {
 		p = p.toLowerCase();
 		StringTokenizer t = new StringTokenizer(p, "/", false);
 		if(t.countTokens() != 3) return false;
-		return (p.endsWith(".v30") || p.endsWith(".o30"));
+		t.nextToken(); //throw away the year
+		t.nextToken(); //throw away the date
+		String name = t.nextToken();
+		if(name.length() > MAX_FILENAME_LENGTH) return false;
+		return (name.endsWith(".v30") ||
+				name.endsWith(".c30") ||
+				name.endsWith(".s30"));
 	}
 	
 	protected boolean isDateRequest(String p){
@@ -145,6 +155,7 @@ public class DataServer extends HttpServlet {
 	}
 
 	protected void sendData(InputStream in, HttpServletResponse response){
+		response.setContentType("application/octet-stream");
 		OutputStream out = null;
 		try{
 			if(in.available() <= 0) return;
