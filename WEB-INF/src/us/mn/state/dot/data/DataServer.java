@@ -30,16 +30,17 @@ import javax.servlet.http.HttpUtils;
 public class DataServer extends HttpServlet {
 
 	/** Maximum length of a data filename */
-	protected final int MAX_FILENAME_LENGTH = 20;
+	static protected final int MAX_FILENAME_LENGTH = 20;
 
 	/** Traffic file extension */
 	static protected final String EXT = ".traffic";
 
 	/** Path to directory containing traffic data files */
-	protected final String basePath = "/data/traffic";
+	static protected final String BASE_PATH = "/data/traffic";
 
-	/** Initializes the servlet */
+	/** Initialize the servlet */
 	public void init(ServletConfig config) throws ServletException {
+		// Nothing to initialize
 	}
 
 	public void doGet(HttpServletRequest request,
@@ -95,9 +96,9 @@ public class DataServer extends HttpServlet {
 		String f = t.nextToken();
 		InputStream in = null;
 		try {
-			in = new FileInputStream(basePath + p);
+			in = new FileInputStream(BASE_PATH + p);
 		} catch(IOException ioe) {
-			in = getStreamZip(basePath + File.separator + y +
+			in = getStreamZip(BASE_PATH + File.separator + y +
 				File.separator + d, f);
 		}
 		if(in == null)
@@ -130,7 +131,7 @@ public class DataServer extends HttpServlet {
 		String year = t.nextToken();
 		if(year.length() != 4)
 			return new String[0];
-		File f = new File(basePath, year);
+		File f = new File(BASE_PATH, year);
 		if(!f.canRead() || !f.isDirectory())
 			return new String[0];
 		String[] list = f.list();
