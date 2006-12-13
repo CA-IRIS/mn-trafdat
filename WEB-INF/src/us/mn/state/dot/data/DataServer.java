@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.StringTokenizer;
-import java.util.LinkedList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -136,6 +136,7 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
+	/** Process a request for the available dates for a given year */
 	protected boolean processDateRequest(String year,
 		HttpServletResponse response)
 	{
@@ -145,39 +146,34 @@ public class DataServer extends HttpServlet {
 			OutputStream out = response.getOutputStream();
 			OutputStreamWriter writer = new OutputStreamWriter(out);
 			BufferedWriter w = new BufferedWriter(writer);
-			LinkedList<String> dates = getDates(year);
-			for(String date: dates) 
-				w.write(date + "\n");
+			writeDates(year, w);
 			w.flush();
 			w.close();
 			return true;
-		} catch(Exception e) {
+		} catch(IOException e) {
 			e.printStackTrace();
 			return false;
 		}
 	}
 
-	protected LinkedList<String> getDates(String year) {
+	/** Write out the dates available for the given year */
+	protected void writeDates(String year, Writer w) throws IOException {
 		File f = new File(BASE_PATH, year);
 		if(f.canRead() && f.isDirectory())
-			return getDates(f);
-		else
-			return new LinkedList<String>();
+			writeDates(f, w);
 	}
 
-	protected LinkedList<String> getDates(File path) {
-		LinkedList<String> dates = new LinkedList<String>();
-		String[] list = path.list();
-		for(int i = 0; i < list.length; i++) {
-			String date = getTrafficDate(path, list[i]);
+	/** Write out the dates available for the given directory */
+	protected void writeDates(File path, Writer w) throws IOException {
+		for(String name: path.list()) {
+			String date = getTrafficDate(path, name);
 			if(date != null)
-				dates.add(date);
+				w.write(date + "\n");
 		}
-		return dates;
 	}
 
 	/** Get the date string for the given file */
-	protected String getTrafficDate(File path, String name) {
+	static protected String getTrafficDate(File path, String name) {
 		if(name.length() < 8)
 			return null;
 		String date = name.substring(0, 8);
