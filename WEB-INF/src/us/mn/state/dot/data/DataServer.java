@@ -13,7 +13,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Collection;
 import java.util.StringTokenizer;
-import java.util.Vector;
+import java.util.LinkedList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -126,7 +126,7 @@ public class DataServer extends HttpServlet {
 	}
 
 	protected String[] getDates(String p) {
-		Collection dates = new Vector();
+		Collection dates = new LinkedList();
 		StringTokenizer t = new StringTokenizer(p, "/", false);
 		String year = t.nextToken();
 		if(year.length() != 4)
