@@ -99,12 +99,12 @@ public class DataServer extends HttpServlet {
 		if(!isValidYear(year))
 			return false;
 		String date = t.nextToken();
-		if(!isValidDate(date))
+		if(!isValidDate(date) || !date.startsWith(year))
 			return false;
 		String name = t.nextToken();
 		if(!isValidName(name))
 			return false;
-		InputStream in = lookupTrafficData(p, year, date, name);
+		InputStream in = getTrafficInputStream(date, name);
 		if(in == null)
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 		else
@@ -193,11 +193,15 @@ public class DataServer extends HttpServlet {
 		return null;
 	}
 
-	static protected InputStream lookupTrafficData(String path, String year,
-		String date, String name)
+	/** Get an InputStream for the given date */
+	static protected InputStream getTrafficInputStream(String date,
+		String name)
 	{
+		String year = date.substring(0, 4);
 		try {
-			return new FileInputStream(BASE_PATH + path);
+			return new FileInputStream(BASE_PATH + File.separator +
+				year + File.separator + date + File.separator +
+				name);
 		} catch(IOException e) {
 			return getStreamZip(BASE_PATH + File.separator + year +
 				File.separator + date, name);
