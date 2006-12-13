@@ -78,13 +78,22 @@ public class DataServer extends HttpServlet {
 		HttpServletResponse response)
 	{
 		String pathInfo = request.getPathInfo();
-		if(!processRequest(pathInfo, response))
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+		try {
+			if(!processRequest(pathInfo, response)) {
+				response.setStatus(
+					HttpServletResponse.SC_BAD_REQUEST);
+			}
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			response.setStatus(
+				HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	/** Process a traffic data request */
 	protected boolean processRequest(String pathInfo,
-		HttpServletResponse response)
+		HttpServletResponse response) throws IOException
 	{
 		if(pathInfo == null)
 			return false;
@@ -110,67 +119,49 @@ public class DataServer extends HttpServlet {
 				sendData(in, response);
 			}
 			finally {
-				closeStream(in);
+				in.close();
 			}
 		}
-		catch(IOException e) {
+		catch(FileNotFoundException e) {
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 		}
 		return true;
 	}
 
 	/** Send data from the given input stream to the response */
-	protected void sendData(InputStream in, HttpServletResponse response) {
+	protected void sendData(InputStream in, HttpServletResponse response)
+		throws IOException
+	{
 		response.setContentType("application/octet-stream");
+		OutputStream out = response.getOutputStream();
 		try {
-			OutputStream out = response.getOutputStream();
-			try {
-				byte[] data = new byte[in.available()];
-				in.read(data);
-				out.write(data);
-			}
-			finally {
-				out.close();
-			}
+			byte[] data = new byte[in.available()];
+			in.read(data);
+			out.write(data);
 		}
-		catch(IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	/** Close the input stream */
-	static protected void closeStream(InputStream in) {
-		try {
-			in.close();
-		}
-		catch(IOException e) {
-			// Ignore
+		finally {
+			out.close();
 		}
 	}
 
 	/** Process a request for the available dates for a given year */
 	protected boolean processDateRequest(String year,
-		HttpServletResponse response)
+		HttpServletResponse response) throws IOException
 	{
 		if(!isValidYear(year))
 			return false;
+		OutputStream out = response.getOutputStream();
 		try {
-			OutputStream out = response.getOutputStream();
-			try {
-				OutputStreamWriter writer =
-					new OutputStreamWriter(out);
-				BufferedWriter w = new BufferedWriter(writer);
-				writeDates(year, w);
-				w.flush();
-				w.close();
-				return true;
-			}
-			finally {
-				out.close();
-			}
-		} catch(IOException e) {
-			e.printStackTrace();
-			return false;
+			OutputStreamWriter writer =
+				new OutputStreamWriter(out);
+			BufferedWriter w = new BufferedWriter(writer);
+			writeDates(year, w);
+			w.flush();
+			w.close();
+			return true;
+		}
+		finally {
+			out.close();
 		}
 	}
 
@@ -216,7 +207,7 @@ public class DataServer extends HttpServlet {
 			return new FileInputStream(BASE_PATH + File.separator +
 				year + File.separator + date + File.separator +
 				name);
-		} catch(IOException e) {
+		} catch(FileNotFoundException e) {
 			return getStreamZip(BASE_PATH + File.separator + year +
 				File.separator + date, name);
 		}
