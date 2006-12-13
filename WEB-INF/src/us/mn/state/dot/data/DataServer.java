@@ -42,7 +42,8 @@ public class DataServer extends HttpServlet {
 		try {
 			Integer.parseInt(year);
 			return year.length() == 4;
-		} catch(NumberFormatException e) {
+		}
+		catch(NumberFormatException e) {
 			return false;
 		}
 	}
@@ -207,7 +208,8 @@ public class DataServer extends HttpServlet {
 			return new FileInputStream(BASE_PATH + File.separator +
 				year + File.separator + date + File.separator +
 				name);
-		} catch(FileNotFoundException e) {
+		}
+		catch(FileNotFoundException e) {
 			return getStreamZip(BASE_PATH + File.separator + year +
 				File.separator + date, name);
 		}
