@@ -1,8 +1,5 @@
 /*
  * Created on Apr 25, 2005
- *
- * To change the template for this generated file go to
- * Window - Preferences - Java - Code Generation - Code and Comments
  */
 package us.mn.state.dot.data;
 
@@ -29,9 +26,6 @@ import javax.servlet.http.HttpUtils;
 
 /**
  * @author john3tim
- * 
- * To change the template for this generated type comment go to Window -
- * Preferences - Java - Code Generation - Code and Comments
  */
 public class DataServer extends HttpServlet {
 
