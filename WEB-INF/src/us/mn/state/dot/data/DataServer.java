@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.LinkedList;
 import java.util.zip.ZipEntry;
@@ -22,10 +21,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpUtils;
 
 /**
  * @author john3tim
+ * @author Douglas Lau
  */
 public class DataServer extends HttpServlet {
 
@@ -38,132 +37,82 @@ public class DataServer extends HttpServlet {
 	/** Path to directory containing traffic data files */
 	static protected final String BASE_PATH = "/data/traffic";
 
+	/** Check if the given year is valid */
+	static protected boolean isValidYear(String year) {
+		try {
+			Integer.parseInt(year);
+			return year.length() == 4;
+		} catch(NumberFormatException e) {
+			return false;
+		}
+	}
+
+	/** Check if the given date is valid */
+	static protected boolean isValidDate(String date) {
+		try {
+			Integer.parseInt(date);
+			return date.length() == 8;
+		}
+		catch(NumberFormatException e) {
+			return false;
+		}
+	}
+
+	/** Check if the given filename is valid */
+	static protected boolean isValidName(String name) {
+		if(name.length() > MAX_FILENAME_LENGTH)
+			return false;
+		return (name.endsWith(".v30") ||
+			name.endsWith(".c30") ||
+			name.endsWith(".s30") ||
+			name.endsWith(".vlog"));
+	}
+
 	/** Initialize the servlet */
 	public void init(ServletConfig config) throws ServletException {
 		// Nothing to initialize
 	}
 
+	/** Process an HTTP GET request */
 	public void doGet(HttpServletRequest request,
 		HttpServletResponse response)
 	{
 		String pathInfo = request.getPathInfo();
-		if(isDataRequest(pathInfo))
-			processDataRequest(pathInfo, response);
-		else if(isDateRequest(pathInfo))
-			processDateRequest(pathInfo, response);
-		else
+		if(!processRequest(pathInfo, response))
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 	}
 
-	protected boolean isDataRequest(String p) {
-		if(p == null)
-			return false;
-		p = p.toLowerCase();
-		StringTokenizer t = new StringTokenizer(p, "/", false);
-		if(t.countTokens() != 3)
-			return false;
-		t.nextToken(); // throw away the year
-		t.nextToken(); // throw away the date
-		String name = t.nextToken();
-		if(name.length() > MAX_FILENAME_LENGTH)
-			return false;
-		return (name.endsWith(".v30") ||
-			name.endsWith(".c30") ||
-			name.endsWith(".s30"));
-	}
-
-	protected boolean isDateRequest(String p) {
-		if(p == null)
-			return false;
-		p = p.toLowerCase();
-		StringTokenizer t = new StringTokenizer(p, "/", false);
-		if(t.countTokens() != 1)
-			return false;
-		try {
-			Integer.parseInt(t.nextToken());
-		} catch(NumberFormatException nfe) {
-			return false;
-		}
-		return true;
-	}
-
-	protected void processDataRequest(String p,
+	/** Process a traffic data request */
+	protected boolean processRequest(String pathInfo,
 		HttpServletResponse response)
 	{
+		if(pathInfo == null)
+			return false;
+		String p = pathInfo.toLowerCase();
 		StringTokenizer t = new StringTokenizer(p, "/", false);
-		String y = t.nextToken();
-		String d = t.nextToken();
-		String f = t.nextToken();
-		InputStream in = null;
-		try {
-			in = new FileInputStream(BASE_PATH + p);
-		} catch(IOException ioe) {
-			in = getStreamZip(BASE_PATH + File.separator + y +
-				File.separator + d, f);
-		}
+		int n_tokens = t.countTokens();
+		if(n_tokens == 1)
+			return processDateRequest(t.nextToken(), response);
+		if(n_tokens != 3)
+			return false;
+		String year = t.nextToken();
+		if(!isValidYear(year))
+			return false;
+		String date = t.nextToken();
+		if(!isValidDate(date))
+			return false;
+		String name = t.nextToken();
+		if(!isValidName(name))
+			return false;
+		InputStream in = lookupTrafficData(p, year, date, name);
 		if(in == null)
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 		else
 			sendData(in, response);
+		return true;
 	}
 
-	protected void processDateRequest(String p,
-		HttpServletResponse response)
-	{
-		OutputStream out = null;
-		try {
-			out = response.getOutputStream();
-			OutputStreamWriter writer = new OutputStreamWriter(out);
-			BufferedWriter w = new BufferedWriter(writer);
-			String[] dates = getDates(p);
-			for(int i = 0; i < dates.length; i++)
-				w.write(dates[i] + "\n");
-			w.flush();
-			w.close();
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	protected String[] getDates(String p) {
-		Collection dates = new LinkedList();
-		StringTokenizer t = new StringTokenizer(p, "/", false);
-		String year = t.nextToken();
-		if(year.length() != 4)
-			return new String[0];
-		File f = new File(BASE_PATH, year);
-		if(!f.canRead() || !f.isDirectory())
-			return new String[0];
-		String[] list = f.list();
-		for(int i = 0; i < list.length; i++) {
-			String date = checkTrafficFile(f, list[i]);
-			if(date != null)
-				dates.add(date);
-		}
-		return (String[])(dates.toArray(new String[0]));
-	}
-
-	/** Check if the given file is a vaild traffic file */
-	protected String checkTrafficFile(File p, String n) {
-		if(n.length() < 8)
-			return null;
-		String date = n.substring(0, 8);
-		try {
-			Integer.parseInt(date);
-		}
-		catch(NumberFormatException e) {
-			return null;
-		}
-		File file = new File(p, n);
-		if(!file.canRead())
-			return null;
-		if(n.length() == 8 && file.isDirectory())
-			return date;
-		if(n.length() == 16 && n.endsWith(EXT))
-			return date;
-		return null;
-	}
-
+	/** Send data from the given input stream to the response */
 	protected void sendData(InputStream in, HttpServletResponse response) {
 		response.setContentType("application/octet-stream");
 		OutputStream out = null;
@@ -187,16 +136,85 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
+	protected boolean processDateRequest(String year,
+		HttpServletResponse response)
+	{
+		if(!isValidYear(year))
+			return false;
+		try {
+			OutputStream out = response.getOutputStream();
+			OutputStreamWriter writer = new OutputStreamWriter(out);
+			BufferedWriter w = new BufferedWriter(writer);
+			LinkedList<String> dates = getDates(year);
+			for(String date: dates) 
+				w.write(date + "\n");
+			w.flush();
+			w.close();
+			return true;
+		} catch(Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	protected LinkedList<String> getDates(String year) {
+		File f = new File(BASE_PATH, year);
+		if(f.canRead() && f.isDirectory())
+			return getDates(f);
+		else
+			return new LinkedList<String>();
+	}
+
+	protected LinkedList<String> getDates(File path) {
+		LinkedList<String> dates = new LinkedList<String>();
+		String[] list = path.list();
+		for(int i = 0; i < list.length; i++) {
+			String date = getTrafficDate(path, list[i]);
+			if(date != null)
+				dates.add(date);
+		}
+		return dates;
+	}
+
+	/** Get the date string for the given file */
+	protected String getTrafficDate(File path, String name) {
+		if(name.length() < 8)
+			return null;
+		String date = name.substring(0, 8);
+		if(!isValidDate(date))
+			return null;
+		File file = new File(path, name);
+		if(!file.canRead())
+			return null;
+		if(name.length() == 8 && file.isDirectory())
+			return date;
+		if(name.length() == 16 && name.endsWith(EXT))
+			return date;
+		return null;
+	}
+
+	static protected InputStream lookupTrafficData(String path, String year,
+		String date, String name)
+	{
+		try {
+			return new FileInputStream(BASE_PATH + path);
+		} catch(IOException e) {
+			return getStreamZip(BASE_PATH + File.separator + year +
+				File.separator + date, name);
+		}
+	}
+
 	/** Get an InputStream from a zip (traffic) file */
-	protected InputStream getStreamZip(String dir, String file) {
+	static protected InputStream getStreamZip(String dir, String file) {
 		try {
 			ZipFile zip = new ZipFile(dir + EXT);
 			ZipEntry entry = zip.getEntry(file);
-			if(entry == null)
-				throw new FileNotFoundException(file);
-			return zip.getInputStream(entry);
-		} catch(IOException ioe) {
-			return null;
+			if(entry != null)
+				return zip.getInputStream(entry);
 		}
+		catch(IOException e) {
+			// Ignore
+		}
+		return null;
 	}
 }
