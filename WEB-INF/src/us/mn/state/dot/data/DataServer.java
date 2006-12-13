@@ -104,35 +104,47 @@ public class DataServer extends HttpServlet {
 		String name = t.nextToken();
 		if(!isValidName(name))
 			return false;
-		InputStream in = getTrafficInputStream(date, name);
-		if(in == null)
+		try {
+			InputStream in = getTrafficInputStream(date, name);
+			try {
+				sendData(in, response);
+			}
+			finally {
+				closeStream(in);
+			}
+		}
+		catch(IOException e) {
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-		else
-			sendData(in, response);
+		}
 		return true;
 	}
 
 	/** Send data from the given input stream to the response */
 	protected void sendData(InputStream in, HttpServletResponse response) {
 		response.setContentType("application/octet-stream");
-		OutputStream out = null;
 		try {
-			if(in.available() <= 0)
-				return;
-			out = response.getOutputStream();
-			byte[] data = new byte[in.available()];
-			in.read(data);
-			out.write(data);
-		} catch(Exception e) {
-			e.printStackTrace();
-		} finally {
+			OutputStream out = response.getOutputStream();
 			try {
-				in.close();
-				out.flush();
-				out.close();
-			} catch(Exception e2) {
-				// Ignore
+				byte[] data = new byte[in.available()];
+				in.read(data);
+				out.write(data);
 			}
+			finally {
+				out.close();
+			}
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/** Close the input stream */
+	static protected void closeStream(InputStream in) {
+		try {
+			in.close();
+		}
+		catch(IOException e) {
+			// Ignore
 		}
 	}
 
@@ -144,12 +156,18 @@ public class DataServer extends HttpServlet {
 			return false;
 		try {
 			OutputStream out = response.getOutputStream();
-			OutputStreamWriter writer = new OutputStreamWriter(out);
-			BufferedWriter w = new BufferedWriter(writer);
-			writeDates(year, w);
-			w.flush();
-			w.close();
-			return true;
+			try {
+				OutputStreamWriter writer =
+					new OutputStreamWriter(out);
+				BufferedWriter w = new BufferedWriter(writer);
+				writeDates(year, w);
+				w.flush();
+				w.close();
+				return true;
+			}
+			finally {
+				out.close();
+			}
 		} catch(IOException e) {
 			e.printStackTrace();
 			return false;
@@ -191,7 +209,7 @@ public class DataServer extends HttpServlet {
 
 	/** Get an InputStream for the given date */
 	static protected InputStream getTrafficInputStream(String date,
-		String name)
+		String name) throws IOException
 	{
 		String year = date.substring(0, 4);
 		try {
@@ -205,16 +223,13 @@ public class DataServer extends HttpServlet {
 	}
 
 	/** Get an InputStream from a zip (traffic) file */
-	static protected InputStream getStreamZip(String dir, String file) {
-		try {
-			ZipFile zip = new ZipFile(dir + EXT);
-			ZipEntry entry = zip.getEntry(file);
-			if(entry != null)
-				return zip.getInputStream(entry);
-		}
-		catch(IOException e) {
-			// Ignore
-		}
-		return null;
+	static protected InputStream getStreamZip(String dir, String file)
+		throws IOException
+	{
+		ZipFile zip = new ZipFile(dir + EXT);
+		ZipEntry entry = zip.getEntry(file);
+		if(entry != null)
+			return zip.getInputStream(entry);
+		throw new FileNotFoundException(file);
 	}
 }
