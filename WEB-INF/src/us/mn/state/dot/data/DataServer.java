@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.StringTokenizer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -99,19 +98,18 @@ public class DataServer extends HttpServlet {
 		if(pathInfo == null)
 			return false;
 		String p = pathInfo.toLowerCase();
-		StringTokenizer t = new StringTokenizer(p, "/", false);
-		int n_tokens = t.countTokens();
-		if(n_tokens == 1)
-			return processDateRequest(t.nextToken(), response);
-		if(n_tokens != 3)
+		String[] t = p.split("/");
+		if(t.length == 1)
+			return processDateRequest(t[0], response);
+		if(t.length != 3)
 			return false;
-		String year = t.nextToken();
+		String year = t[1];
+		String date = t[2];
+		String name = t[3];
 		if(!isValidYear(year))
 			return false;
-		String date = t.nextToken();
 		if(!isValidDate(date) || !date.startsWith(year))
 			return false;
-		String name = t.nextToken();
 		if(!isValidName(name))
 			return false;
 		try {
