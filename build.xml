@@ -2,7 +2,6 @@
 
 <!-- ================================================== -->
 <!-- DataServer build file   -->
-<!-- $Revision: 1.2 $ $Date: 2005/08/16 19:58:55 $  -->
 <!-- ================================================== -->
 
 <project name="trafdat" default="war" basedir=".">
@@ -15,14 +14,11 @@
     <property name="classes.dir" value="WEB-INF/classes" />
 	<property name="webxml" value="WEB-INF/web.xml"/>
 	<property name="javadocs.dir" value="javadocs" />
-    <property name="build.manifest" value="${build.dir}/manifest" />
     <property name="userdocs.dir" value="${name}" />
-    <property name="manifest" value="src/etc/MANIFEST.MF" />
     <property name="build.compiler.pedantic" value="true"/>
 	<path id="classpath">
 		<fileset dir = "${lib.dir}" includes="**/*.jar"/>
 	</path>
-	<property name="packages" value="us.mn.state.dot.webdocs.*" />
 
 <!-- =================================================== -->
 <!-- Prepares the directory structure-->
@@ -86,32 +82,13 @@
 		</war>
 	</target>
 
-<!-- =================================================== -->
-<!-- Creates the API documentation   -->
-<!-- =================================================== -->
-	<target name="javadocs"
-		depends="prepare"
-		description="Creates the javadocs for the project.">
-		<javadoc packagenames="${packages}"
-			classpathref="classpath"
-			sourcepath="${basedir}/${src.dir}"
-			destdir="${build.javadocs}"
-			author="true"
-			version="true"
-			windowtitle="${name} API"
-			doctitle="${name}"
-			bottom="Copyright &#169; Minnesota Department of
-			Transportation. All Rights Reserved."/>
-	</target>
-
-
 <!-- ================================================== -->
 <!-- Cleans up generated stuff   -->
 <!-- ================================================== -->
 	<target name="clean"
 		description="deletes all compiled classes and the distribution
 		directory.">
-		<delete dir="${build.dir}"/>
+		<delete dir="${classes.dir}"/>
 		<delete dir="${dist.dir}"/>
 		<delete dir="${temp.src.dir}"/>
 	</target>
@@ -123,5 +100,6 @@
 		depends="clean"
 		description="Deletes the jar file, all compiled classes and the
 		distribution directory.">
+		<delete file="${name}.war"/>
 	</target>
 </project>
