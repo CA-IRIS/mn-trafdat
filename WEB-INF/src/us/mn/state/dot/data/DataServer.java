@@ -185,7 +185,7 @@ public class DataServer extends HttpServlet {
 
 	/** Get the file name with .vlog extension */
 	static protected String getVLogName(String name) {
-		return name.substring(0, name.length() - 4) + "vlog";
+		return name.substring(0, name.length() - 3) + "vlog";
 	}
 
 	/** Send data from the given input stream to the response */
