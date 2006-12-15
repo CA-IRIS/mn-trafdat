@@ -104,9 +104,14 @@ public class VehicleEvent {
 	}
 
 	/** Set the timestamp if not already set */
-	public void setStamp(int s) {
+	public void setStamp(Integer s) {
 		if(stamp == null)
 			stamp = s;
+	}
+
+	/** Get the vehicle event timestamp */
+	public Integer getStamp() {
+		return stamp;
 	}
 
 	/** Set the headway if not already set */
@@ -116,6 +121,11 @@ public class VehicleEvent {
 				throw new VehicleEvent.Exception();
 			headway = h;
 		}
+	}
+
+	/** Get the vehicle speed */
+	public Integer getSpeed() {
+		return speed;
 	}
 
 	/** Check the vehicle event is valid */
