@@ -7,7 +7,7 @@
 public class SampleData {
 
 	/** Missing sample data is indicated by negative value */
-	static protected final int MISSING_DATA = -1;
+	static public final int MISSING_DATA = -1;
 
 	/** Was there a reset during this sample period? */
 	protected boolean reset = false;

@@ -12,9 +12,6 @@ import java.util.ListIterator;
  */
 public class VehicleEventLog {
 
-	/** Number of 30-second samples per day */
-	static protected final int SAMPLES_PER_DAY = 2880;
-
 	/** List of all vehicle events in the log */
 	protected final LinkedList<VehicleEvent> events =
 		new LinkedList<VehicleEvent>();
@@ -79,7 +76,7 @@ public class VehicleEventLog {
 	/** Get the 30-second period for the given timestamp (ms) */
 	protected int getPeriod30Second(int ms) throws VehicleEvent.Exception {
 		int p = ms / 30000;
-		if(p < 0 || p > SAMPLES_PER_DAY)
+		if(p < 0 || p > SampleBin.SAMPLES_PER_DAY)
 			throw new VehicleEvent.Exception();
 		return p;
 	}

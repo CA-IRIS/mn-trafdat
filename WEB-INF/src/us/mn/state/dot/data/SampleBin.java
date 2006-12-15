@@ -6,6 +6,9 @@
  */
 public interface SampleBin {
 
+	/** Number of 30-second samples per day */
+	int SAMPLES_PER_DAY = 2880;
+
 	/** Add one data sample to the bin */
-	public void addSample(SampleData sam);
+	void addSample(SampleData sam);
 }
