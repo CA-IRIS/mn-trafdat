@@ -103,14 +103,16 @@ public class DataServer extends HttpServlet {
 		if(pathInfo == null)
 			return false;
 		String p = pathInfo.toLowerCase();
+		if(p.startsWith("/"))
+			p = p.substring(1);
 		String[] t = p.split("/");
 		if(t.length == 1)
 			return processDateRequest(t[0], response);
 		if(t.length != 3)
 			return false;
-		String year = t[1];
-		String date = t[2];
-		String name = t[3];
+		String year = t[0];
+		String date = t[1];
+		String name = t[2];
 		if(!isValidYear(year))
 			return false;
 		if(!isValidDate(date) || !date.startsWith(year))
