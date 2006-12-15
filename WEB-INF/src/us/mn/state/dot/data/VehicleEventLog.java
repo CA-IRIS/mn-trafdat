@@ -92,9 +92,10 @@ public class VehicleEventLog {
 				sam.setReset();
 			else {
 				int p = getPeriod30Second(e.getStamp());
-				if(p > sam.getPeriod()) {
+				int pp = sam.getPeriod();
+				while(p > pp) {
 					bin.addSample(sam);
-					sam.clear(p);
+					sam.clear(++pp);
 				}
 				sam.addEvent(e);
 			}
