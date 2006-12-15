@@ -1,6 +1,3 @@
-/*
- * Created on Apr 25, 2005
- */
 package us.mn.state.dot.data;
 
 import java.io.BufferedWriter;
