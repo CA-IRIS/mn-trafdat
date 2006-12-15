@@ -40,7 +40,7 @@ public class SampleData {
 	/** Get the binned speed for the sample period */
 	public int getSpeed() {
 		if(speed_cnt > 0 && !reset) {
-			speed = Math.round(speed_sum / speed_cnt);
+			int speed = Math.round(speed_sum / speed_cnt);
 			if(speed < 128)
 				return speed;
 		}
@@ -64,7 +64,7 @@ public class SampleData {
 
 	/** Clear the sample data for a new period */
 	public void clear(int p) {
-		resets = false;
+		reset = false;
 		period = p;
 		volume = 0;
 		speed_sum = 0;

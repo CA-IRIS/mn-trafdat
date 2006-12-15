@@ -1,4 +1,4 @@
-package us.mn.state.dot.data;
+//package us.mn.state.dot.data;
 
 /**
  * Vehicle event class
@@ -8,7 +8,7 @@ package us.mn.state.dot.data;
 public class VehicleEvent {
 
 	/** Vehicle event exception */
-	public class Exception extends java.lang.Exception { }
+	static public class Exception extends java.lang.Exception { }
 
 	/** Parse an integer from a vehicle log */
 	static protected Integer parseInt(String v) {
@@ -59,7 +59,7 @@ public class VehicleEvent {
 	protected Integer speed = null;
 
 	/** Create a new vehicle event */
-	public VehicleEvent(String line) throws VehicleEvent.Exception {
+	public VehicleEvent(String line) {
 		String[] f = line.trim().split(",");
 		if(f.length == 1 && f[0].equals("*"))
 			reset = true;
@@ -86,6 +86,11 @@ public class VehicleEvent {
 		b.append(',');
 		b.append(speed);
 		return b.toString();
+	}
+
+	/** Is this a reset event? */
+	public boolean isReset() {
+		return reset;
 	}
 
 	/** Get a timestamp for the previous vehicle event */

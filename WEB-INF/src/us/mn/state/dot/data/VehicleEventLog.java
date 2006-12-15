@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,16 +20,16 @@ public class VehicleEventLog {
 		new LinkedList<VehicleEvent>();
 
 	/** Create a new vehicle event log */
-	public VehicleEventLog(BufferedReader reader) {
+	public VehicleEventLog(BufferedReader reader) throws IOException {
 		String line = reader.readLine();
 		while(line != null) {
-			events.append(new VehicleEvent(line));
+			events.add(new VehicleEvent(line));
 			line = reader.readLine();
 		}
 	}
 
 	/** Propogate timestamps forward to following events */
-	public void propogateStampsForward() {
+	public void propogateStampsForward() throws VehicleEvent.Exception {
 		Integer stamp = null;
 		for(VehicleEvent e: events) {
 			if(stamp != null)
@@ -50,13 +51,13 @@ public class VehicleEventLog {
 	}
 
 	/** Interpolate timestamps in gaps where they are missing */
-	public void interpolateMissingStamps() {
+	public void interpolateMissingStamps() throws VehicleEvent.Exception {
 		Integer stamp = null;
 		LinkedList<VehicleEvent> ev = new LinkedList<VehicleEvent>();
 		for(VehicleEvent e: events) {
 			Integer s = e.getStamp();
 			if(s == null)
-				ev.append(e);
+				ev.add(e);
 			else if(!ev.isEmpty()) {
 				if(stamp != null) {
 					int gap = s - stamp;
@@ -75,6 +76,14 @@ public class VehicleEventLog {
 		}
 	}
 
+	/** Get the 30-second period for the given timestamp (ms) */
+	protected int getPeriod30Second(int ms) throws VehicleEvent.Exception {
+		int p = ms / 30000;
+		if(p < 0 || p > SAMPLES_PER_DAY)
+			throw new VehicleEvent.Exception();
+		return p;
+	}
+
 	/** Bin vehicle event data into 30 second samples */
 	public void bin30SecondSamples(SampleBin bin)
 		throws VehicleEvent.Exception
@@ -85,7 +94,7 @@ public class VehicleEventLog {
 			if(e.isReset())
 				sam.setReset();
 			else {
-				int p = get30SecondPeriod(e.getStamp());
+				int p = getPeriod30Second(e.getStamp());
 				if(p > sam.getPeriod()) {
 					bin.addSample(sam);
 					sam.clear(p);
