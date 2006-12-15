@@ -1,11 +1,13 @@
 package us.mn.state.dot.data;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -86,11 +88,17 @@ public class DataServer extends HttpServlet {
 			response.setStatus(
 				HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
+		catch(VehicleEvent.Exception e) {
+			e.printStackTrace();
+			response.setStatus(
+				HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	/** Process a traffic data request */
 	protected boolean processRequest(String pathInfo,
-		HttpServletResponse response) throws IOException
+		HttpServletResponse response) throws IOException,
+		VehicleEvent.Exception
 	{
 		if(pathInfo == null)
 			return false;
@@ -112,27 +120,79 @@ public class DataServer extends HttpServlet {
 		try {
 			InputStream in = getTrafficInputStream(date, name);
 			try {
-				sendData(in, response);
+				byte[] data = new byte[in.available()];
+				in.read(data);
+				sendData(data, response);
 			}
 			finally {
 				in.close();
 			}
 		}
 		catch(FileNotFoundException e) {
+			try {
+				byte[] data = convertVLog(date, name);
+				if(data != null) {
+					sendData(data, response);
+					return true;
+				}
+			}
+			catch(FileNotFoundException e2) {
+				// Ignore
+			}
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 		}
 		return true;
 	}
 
+	/** Convert a .vlog file to another format */
+	protected byte[] convertVLog(String date, String name)
+		throws IOException, VehicleEvent.Exception
+	{
+		SampleBin bin = null;
+		if(name.endsWith(".v30"))
+			bin = new VolumeSampleBin();
+		else if(name.endsWith(".s30"))
+			bin = new SpeedSampleBin();
+		if(bin != null) {
+			String n = getVLogName(name);
+			VehicleEventLog log = createVLog(
+				getTrafficInputStream(date, n));
+			log.bin30SecondSamples(bin);
+			return bin.getData();
+		}
+		return null;
+	}
+
+	/** Create and process a vehicle event log */
+	protected VehicleEventLog createVLog(InputStream in)
+		throws IOException, VehicleEvent.Exception
+	{
+		try {
+			InputStreamReader reader = new InputStreamReader(in);
+			BufferedReader b = new BufferedReader(reader);
+			VehicleEventLog log = new VehicleEventLog(b);
+			log.propogateStampsForward();
+			log.propogateStampsBackward();
+			log.interpolateMissingStamps();
+			return log;
+		}
+		finally {
+			in.close();
+		}
+	}
+
+	/** Get the file name with .vlog extension */
+	static protected String getVLogName(String name) {
+		return name.substring(0, name.length() - 4) + "vlog";
+	}
+
 	/** Send data from the given input stream to the response */
-	protected void sendData(InputStream in, HttpServletResponse response)
+	protected void sendData(byte[] data, HttpServletResponse response)
 		throws IOException
 	{
 		response.setContentType("application/octet-stream");
 		OutputStream out = response.getOutputStream();
 		try {
-			byte[] data = new byte[in.available()];
-			in.read(data);
 			out.write(data);
 		}
 		finally {

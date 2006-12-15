@@ -1,3 +1,4 @@
+package us.mn.state.dot.data;
 
 /**
  * Bin for storing volume sample data

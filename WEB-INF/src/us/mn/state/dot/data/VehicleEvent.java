@@ -1,4 +1,4 @@
-//package us.mn.state.dot.data;
+package us.mn.state.dot.data;
 
 /**
  * Vehicle event class

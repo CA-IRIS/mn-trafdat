@@ -1,3 +1,4 @@
+package us.mn.state.dot.data;
 
 /**
  * Class to bin vehicle event data into sample data periods.
