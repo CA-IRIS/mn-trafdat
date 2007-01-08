@@ -103,7 +103,7 @@ public class DataServer extends HttpServlet {
 	{
 		if(pathInfo == null)
 			return false;
-		String p = pathInfo.toLowerCase();
+		String p = pathInfo;
 		if(p.startsWith("/"))
 			p = p.substring(1);
 		String[] t = p.split("/");
