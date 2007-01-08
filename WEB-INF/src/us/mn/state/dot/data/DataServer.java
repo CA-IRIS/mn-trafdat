@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import javax.servlet.ServletConfig;
@@ -277,9 +278,14 @@ public class DataServer extends HttpServlet {
 		throws IOException
 	{
 		ZipFile zip = new ZipFile(dir + EXT);
-		ZipEntry entry = zip.getEntry(file);
-		if(entry != null)
-			return zip.getInputStream(entry);
+		try {
+			ZipEntry entry = zip.getEntry(file);
+			if(entry != null)
+				return zip.getInputStream(entry);
+		}
+		catch(ZipException e) {
+			// Defer to FileNotFoundException, below
+		}
 		throw new FileNotFoundException(file);
 	}
 }
