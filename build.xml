@@ -21,7 +21,7 @@
 	<property name="build.javadocs.dir" value="${build.dir}/javadocs" />
 
     <property name="userdocs.dir" value="${name}" />
-    <property name="manifest" value="etc/manifest.mf" />
+    <property name="webxml" value="etc/web.xml" />
     <property name="build.compiler.pedantic" value="true"/>
 	<path id="classpath">
 		<fileset dir = "${lib.dir}" includes="**/*.jar"/>
@@ -57,30 +57,6 @@
 			<fileset dir="${src.dir}"/>
 			<filterset begintoken="@@" endtoken="@@">
 				<filter token="VERSION" value="${version}"/>
-			</filterset>
-		</copy>
-
-		<copy todir="${build.web.dir}" filtering="true">
-			<fileset dir="${web.dir}" />
-			<filterset begintoken="@@" endtoken="@@">
-				<filter token="BUILD.ID"
-					value="${DSTAMP}:${TSTAMP}"/>
-				<filter token="NAME"
-					value="${name}"/>
-				<filter token="VERSION"
-					value="${version}"/>
-			</filterset>
-		</copy>
-
-		<copy todir="${build.etc.dir}" filtering="true">
-			<fileset dir="${etc.dir}" />
-			<filterset begintoken="@@" endtoken="@@">
-				<filter token="BUILD.ID"
-					value="${DSTAMP}:${TSTAMP}"/>
-				<filter token="NAME"
-					value="${name}"/>
-				<filter token="VERSION"
-					value="${version}"/>
 			</filterset>
 		</copy>
 	</target>
