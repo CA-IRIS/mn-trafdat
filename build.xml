@@ -9,9 +9,7 @@
     <property file="${user.home}/.ant.properties"/>
     <property name="src.dir" value="src" />
     <property name="etc.dir" value="etc" />
-    <property name="web.dir" value="web" />
     <property name="lib.dir" value="lib" />
-    <property name="images.dir" value="web/images" />
 
 	<property name="build.dir" value="build" />
 	<property name="build.webapp.dir" value="build/webapp" />
