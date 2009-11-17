@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!-- ================================================== -->
-<!-- DataServer build file   -->
+<!-- TrafDat build file   -->
 <!-- ================================================== -->
 
 <project name="trafdat" default="war" basedir=".">
@@ -118,5 +118,4 @@
 			description="deletes build directory.">
 			<delete dir="${build.dir}"/>
 		</target>
-
 </project>
