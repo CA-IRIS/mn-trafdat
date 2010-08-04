@@ -87,7 +87,7 @@
 			<fileset dir="${build.classes.dir}"/>
 		</copy>
 		<war
-			destfile="${build.lib.dir}/${name}-${version}.war"
+			destfile="${build.lib.dir}/${name}.war-${version}"
 			webxml="${webxml}"
 			basedir="${build.webapp.dir}">
 		</war>
