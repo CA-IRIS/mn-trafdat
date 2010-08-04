@@ -1,6 +1,6 @@
 /*
  * Project: Trafdat
- * Copyright (C) 2007-2009  Minnesota Department of Transportation
+ * Copyright (C) 2007-2010  Minnesota Department of Transportation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@ import java.io.Writer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -72,14 +71,16 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Check if the given filename is valid */
-	static protected boolean isValidName(String name) {
+	/** Check if the given sample file name is valid */
+	static protected boolean isValidSampleFile(String name) {
 		if(name.length() > MAX_FILENAME_LENGTH)
 			return false;
-		return (name.endsWith(".v30") ||
-			name.endsWith(".c30") ||
-			name.endsWith(".s30") ||
-			name.endsWith(".vlog"));
+		return name.endsWith(".v30") ||
+		       name.endsWith(".c30") ||
+		       name.endsWith(".s30") ||
+		       name.endsWith(".vlog") ||
+		       name.endsWith(".pr60") ||
+		       name.endsWith(".pt60");
 	}
 
 	/** Initialize the servlet */
@@ -132,7 +133,7 @@ public class DataServer extends HttpServlet {
 			return false;
 		if(!isValidDate(date) || !date.startsWith(year))
 			return false;
-		if(!isValidName(name))
+		if(!isValidSampleFile(name))
 			return false;
 		try {
 			InputStream in = getTrafficInputStream(date, name);
