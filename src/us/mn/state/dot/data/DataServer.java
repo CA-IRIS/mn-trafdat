@@ -126,9 +126,14 @@ public class DataServer extends HttpServlet {
 			return processDateRequest(t[0], response);
 		if(t.length != 3)
 			return false;
-		String year = t[0];
-		String date = t[1];
-		String name = t[2];
+		return processSampleRequest(t[0], t[1], t[2], response);
+	}
+
+	/** Process a sample data request */
+	protected boolean processSampleRequest(String year, String date,
+		String name, HttpServletResponse response) throws IOException,
+		VehicleEvent.Exception
+	{
 		if(!isValidYear(year))
 			return false;
 		if(!isValidDate(date) || !date.startsWith(year))
