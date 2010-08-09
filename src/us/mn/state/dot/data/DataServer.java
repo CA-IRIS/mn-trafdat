@@ -134,6 +134,60 @@ public class DataServer extends HttpServlet {
 		return processSampleRequest(p[0], p[1], p[2], response);
 	}
 
+	/** Process a request for the available dates for a given year */
+	protected boolean processDateRequest(String year,
+		HttpServletResponse response) throws IOException
+	{
+		if(!isValidYear(year))
+			return false;
+		OutputStream out = response.getOutputStream();
+		try {
+			OutputStreamWriter writer =
+				new OutputStreamWriter(out);
+			BufferedWriter w = new BufferedWriter(writer);
+			writeDates(year, w);
+			w.flush();
+			w.close();
+			return true;
+		}
+		finally {
+			out.close();
+		}
+	}
+
+	/** Write out the dates available for the given year */
+	protected void writeDates(String year, Writer w) throws IOException {
+		File f = new File(BASE_PATH, year);
+		if(f.canRead() && f.isDirectory())
+			writeDates(f, w);
+	}
+
+	/** Write out the dates available for the given directory */
+	protected void writeDates(File path, Writer w) throws IOException {
+		for(String name: path.list()) {
+			String date = getTrafficDate(path, name);
+			if(date != null)
+				w.write(date + "\n");
+		}
+	}
+
+	/** Get the date string for the given file */
+	static protected String getTrafficDate(File path, String name) {
+		if(name.length() < 8)
+			return null;
+		String date = name.substring(0, 8);
+		if(!isValidDate(date))
+			return null;
+		File file = new File(path, name);
+		if(!file.canRead())
+			return null;
+		if(name.length() == 8 && file.isDirectory())
+			return date;
+		if(name.length() == 16 && name.endsWith(EXT))
+			return date;
+		return null;
+	}
+
 	/** Process a sample data request */
 	protected boolean processSampleRequest(String year, String date,
 		String name, HttpServletResponse response) throws IOException,
@@ -227,60 +281,6 @@ public class DataServer extends HttpServlet {
 		finally {
 			out.close();
 		}
-	}
-
-	/** Process a request for the available dates for a given year */
-	protected boolean processDateRequest(String year,
-		HttpServletResponse response) throws IOException
-	{
-		if(!isValidYear(year))
-			return false;
-		OutputStream out = response.getOutputStream();
-		try {
-			OutputStreamWriter writer =
-				new OutputStreamWriter(out);
-			BufferedWriter w = new BufferedWriter(writer);
-			writeDates(year, w);
-			w.flush();
-			w.close();
-			return true;
-		}
-		finally {
-			out.close();
-		}
-	}
-
-	/** Write out the dates available for the given year */
-	protected void writeDates(String year, Writer w) throws IOException {
-		File f = new File(BASE_PATH, year);
-		if(f.canRead() && f.isDirectory())
-			writeDates(f, w);
-	}
-
-	/** Write out the dates available for the given directory */
-	protected void writeDates(File path, Writer w) throws IOException {
-		for(String name: path.list()) {
-			String date = getTrafficDate(path, name);
-			if(date != null)
-				w.write(date + "\n");
-		}
-	}
-
-	/** Get the date string for the given file */
-	static protected String getTrafficDate(File path, String name) {
-		if(name.length() < 8)
-			return null;
-		String date = name.substring(0, 8);
-		if(!isValidDate(date))
-			return null;
-		File file = new File(path, name);
-		if(!file.canRead())
-			return null;
-		if(name.length() == 8 && file.isDirectory())
-			return date;
-		if(name.length() == 16 && name.endsWith(EXT))
-			return date;
-		return null;
 	}
 
 	/** Get an InputStream for the given date */
