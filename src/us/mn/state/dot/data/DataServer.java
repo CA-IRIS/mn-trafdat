@@ -151,6 +151,7 @@ public class DataServer extends HttpServlet {
 				byte[] data = new byte[in.available()];
 				in.read(data);
 				sendData(data, response);
+				return true;
 			}
 			finally {
 				in.close();
@@ -168,8 +169,8 @@ public class DataServer extends HttpServlet {
 				// Ignore
 			}
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return true;
 		}
-		return true;
 	}
 
 	/** Convert a .vlog file to another format */
