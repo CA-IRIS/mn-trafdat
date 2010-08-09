@@ -231,6 +231,41 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
+	/** Get an InputStream for the given date */
+	static protected InputStream getTrafficInputStream(String date,
+		String name) throws IOException
+	{
+		try {
+			return new FileInputStream(getDatePath(date) +
+				File.separator + name);
+		}
+		catch(FileNotFoundException e) {
+			return getStreamZip(getDatePath(date), name);
+		}
+	}
+
+	/** Get the file path to the given date */
+	static protected String getDatePath(String date) {
+		String year = date.substring(0, 4);
+		return BASE_PATH + File.separator + year + File.separator +date;
+	}
+
+	/** Get an InputStream from a zip (traffic) file */
+	static protected InputStream getStreamZip(String dir, String file)
+		throws IOException
+	{
+		try {
+			ZipFile zip = new ZipFile(dir + EXT);
+			ZipEntry entry = zip.getEntry(file);
+			if(entry != null)
+				return zip.getInputStream(entry);
+		}
+		catch(ZipException e) {
+			// Defer to FileNotFoundException, below
+		}
+		throw new FileNotFoundException(file);
+	}
+
 	/** Convert a .vlog file to another format */
 	protected InputStream convertVLog(String date, String name)
 		throws IOException, VehicleEvent.Exception
@@ -285,40 +320,5 @@ public class DataServer extends HttpServlet {
 		finally {
 			out.close();
 		}
-	}
-
-	/** Get an InputStream for the given date */
-	static protected InputStream getTrafficInputStream(String date,
-		String name) throws IOException
-	{
-		try {
-			return new FileInputStream(getDatePath(date) +
-				File.separator + name);
-		}
-		catch(FileNotFoundException e) {
-			return getStreamZip(getDatePath(date), name);
-		}
-	}
-
-	/** Get the file path to the given date */
-	static protected String getDatePath(String date) {
-		String year = date.substring(0, 4);
-		return BASE_PATH + File.separator + year + File.separator +date;
-	}
-
-	/** Get an InputStream from a zip (traffic) file */
-	static protected InputStream getStreamZip(String dir, String file)
-		throws IOException
-	{
-		try {
-			ZipFile zip = new ZipFile(dir + EXT);
-			ZipEntry entry = zip.getEntry(file);
-			if(entry != null)
-				return zip.getInputStream(entry);
-		}
-		catch(ZipException e) {
-			// Defer to FileNotFoundException, below
-		}
-		throw new FileNotFoundException(file);
 	}
 }
