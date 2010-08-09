@@ -311,19 +311,27 @@ public class DataServer extends HttpServlet {
 	static protected InputStream getBinnedVLogInputStream(String date,
 		String name) throws IOException, VehicleEvent.Exception
 	{
-		SampleBin bin = null;
-		if(name.endsWith(".v30"))
-			bin = new VolumeSampleBin();
-		else if(name.endsWith(".s30"))
-			bin = new SpeedSampleBin();
+		SampleBin bin = createSampleBin(name);
 		if(bin != null) {
 			String n = getVLogName(name);
 			VehicleEventLog log = createVLog(
 				getTrafficInputStream(date, n));
 			log.bin30SecondSamples(bin);
 			return new ByteArrayInputStream(bin.getData());
-		}
-		throw new FileNotFoundException(name);
+		} else
+			throw new FileNotFoundException(name);
+	}
+
+	/** Create a sample bin for the given file name.
+	 * @param name Name of sample file.
+	 * @return Sample bin for specified file. */
+	static protected SampleBin createSampleBin(String name) {
+		if(name.endsWith(".v30"))
+			return new VolumeSampleBin();
+		else if(name.endsWith(".s30"))
+			return new SpeedSampleBin();
+		else
+			return null;
 	}
 
 	/** Create and process a vehicle event log.
