@@ -49,6 +49,16 @@ public class DataServer extends HttpServlet {
 	/** Path to directory containing traffic data files */
 	static protected final String BASE_PATH = "/data/traffic";
 
+	/** Split a request path into component parts */
+	static private String[] splitRequestPath(String p) {
+		if(p != null) {
+			while(p.startsWith("/"))
+				p = p.substring(1);
+			return p.split("/");
+		}
+		return new String[0];
+	}
+
 	/** Check if the given year is valid */
 	static protected boolean isValidYear(String year) {
 		try {
@@ -116,17 +126,12 @@ public class DataServer extends HttpServlet {
 		HttpServletResponse response) throws IOException,
 		VehicleEvent.Exception
 	{
-		if(pathInfo == null)
+		String[] p = splitRequestPath(pathInfo);
+		if(p.length == 1)
+			return processDateRequest(p[0], response);
+		if(p.length != 3)
 			return false;
-		String p = pathInfo;
-		if(p.startsWith("/"))
-			p = p.substring(1);
-		String[] t = p.split("/");
-		if(t.length == 1)
-			return processDateRequest(t[0], response);
-		if(t.length != 3)
-			return false;
-		return processSampleRequest(t[0], t[1], t[2], response);
+		return processSampleRequest(p[0], p[1], p[2], response);
 	}
 
 	/** Process a sample data request */
