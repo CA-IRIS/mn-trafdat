@@ -216,16 +216,6 @@ public class DataServer extends HttpServlet {
 			}
 		}
 		catch(FileNotFoundException e) {
-			try {
-				InputStream in = convertVLog(date, name);
-				byte[] data = new byte[in.available()];
-				in.read(data);
-				sendData(data, response);
-				return true;
-			}
-			catch(FileNotFoundException e2) {
-				// Ignore
-			}
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			return true;
 		}
@@ -233,14 +223,19 @@ public class DataServer extends HttpServlet {
 
 	/** Get an InputStream for the given date */
 	static protected InputStream getTrafficInputStream(String date,
-		String name) throws IOException
+		String name) throws IOException, VehicleEvent.Exception
 	{
 		try {
 			return getStreamZip(getDatePath(date), name);
 		}
 		catch(FileNotFoundException e) {
-			return new FileInputStream(getDatePath(date) +
-				File.separator + name);
+			try {
+				return new FileInputStream(getDatePath(date) +
+					File.separator + name);
+			}
+			catch(FileNotFoundException ee) {
+				return convertVLog(date, name);
+			}
 		}
 	}
 
@@ -267,7 +262,7 @@ public class DataServer extends HttpServlet {
 	}
 
 	/** Convert a .vlog file to another format */
-	protected InputStream convertVLog(String date, String name)
+	static protected InputStream convertVLog(String date, String name)
 		throws IOException, VehicleEvent.Exception
 	{
 		SampleBin bin = null;
@@ -286,7 +281,7 @@ public class DataServer extends HttpServlet {
 	}
 
 	/** Create and process a vehicle event log */
-	protected VehicleEventLog createVLog(InputStream in)
+	static protected VehicleEventLog createVLog(InputStream in)
 		throws IOException, VehicleEvent.Exception
 	{
 		try {
