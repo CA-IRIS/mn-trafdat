@@ -232,9 +232,7 @@ public class DataServer extends HttpServlet {
 		try {
 			InputStream in = getTrafficInputStream(date, name);
 			try {
-				byte[] data = new byte[in.available()];
-				in.read(data);
-				sendData(data, response);
+				sendData(in, response);
 				return true;
 			}
 			finally {
@@ -345,15 +343,21 @@ public class DataServer extends HttpServlet {
 	}
 
 	/** Send data from the given input stream to the response.
-	 * @param data Array of data to send.
+	 * @param in Input stream to read data from.
 	 * @param response Servlet response object. */
-	protected void sendData(byte[] data, HttpServletResponse response)
-		throws IOException
+	static protected void sendData(InputStream in,
+		HttpServletResponse response) throws IOException
 	{
+		byte[] buf = new byte[4096];
 		response.setContentType("application/octet-stream");
 		OutputStream out = response.getOutputStream();
 		try {
-			out.write(data);
+			while(true) {
+				int n_bytes = in.read(buf);
+				if(n_bytes < 0)
+					break;
+				out.write(buf, 0, n_bytes);
+			}
 		}
 		finally {
 			out.close();
