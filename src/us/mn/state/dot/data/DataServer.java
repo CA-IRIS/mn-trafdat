@@ -286,16 +286,19 @@ public class DataServer extends HttpServlet {
 	static protected InputStream getTrafficInputStream(String date,
 		String name) throws IOException
 	{
-		String year = date.substring(0, 4);
 		try {
-			return new FileInputStream(BASE_PATH + File.separator +
-				year + File.separator + date + File.separator +
-				name);
+			return new FileInputStream(getDatePath(date) +
+				File.separator + name);
 		}
 		catch(FileNotFoundException e) {
-			return getStreamZip(BASE_PATH + File.separator + year +
-				File.separator + date, name);
+			return getStreamZip(getDatePath(date), name);
 		}
+	}
+
+	/** Get the file path to the given date */
+	static protected String getDatePath(String date) {
+		String year = date.substring(0, 4);
+		return BASE_PATH + File.separator + year + File.separator +date;
 	}
 
 	/** Get an InputStream from a zip (traffic) file */
