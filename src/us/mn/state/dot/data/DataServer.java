@@ -50,6 +50,14 @@ public class DataServer extends HttpServlet {
 	/** Path to directory containing traffic data files */
 	static protected final String BASE_PATH = "/data/traffic";
 
+	/** Get the file path to the given date.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @return Path to file in sample archive. */
+	static protected String getDatePath(String date) {
+		String year = date.substring(0, 4);
+		return BASE_PATH + File.separator + year + File.separator +date;
+	}
+
 	/** Split a request path into component parts.
 	 * @param p Request path
 	 * @return Array of path components. */
@@ -253,52 +261,55 @@ public class DataServer extends HttpServlet {
 		String name) throws IOException, VehicleEvent.Exception
 	{
 		try {
-			return getStreamZip(getDatePath(date), name);
+			return getZipInputStream(date, name);
 		}
 		catch(FileNotFoundException e) {
 			try {
-				return new FileInputStream(getDatePath(date) +
-					File.separator + name);
+				return getFileInputStream(date, name);
 			}
 			catch(FileNotFoundException ee) {
-				return convertVLog(date, name);
+				return getBinnedVLogInputStream(date, name);
 			}
 		}
 	}
 
-	/** Get the file path to the given date.
+	/** Get a sample InputStream from a zip (traffic) file.
 	 * @param date String date (8 digits yyyyMMdd).
-	 * @return Path to file in sample archive. */
-	static protected String getDatePath(String date) {
-		String year = date.substring(0, 4);
-		return BASE_PATH + File.separator + year + File.separator +date;
-	}
-
-	/** Get an InputStream from a zip (traffic) file.
-	 * @param dir Directory containing .traffic files.
-	 * @param file Name of sample file within .traffic file.
+	 * @param name Name of sample file within .traffic file.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream getStreamZip(String dir, String file)
+	static protected InputStream getZipInputStream(String date, String name)
 		throws IOException
 	{
+		String traffic = getDatePath(date) + EXT;
 		try {
-			ZipFile zip = new ZipFile(dir + EXT);
-			ZipEntry entry = zip.getEntry(file);
+			ZipFile zip = new ZipFile(traffic);
+			ZipEntry entry = zip.getEntry(name);
 			if(entry != null)
 				return zip.getInputStream(entry);
 		}
 		catch(ZipException e) {
 			// Defer to FileNotFoundException, below
 		}
-		throw new FileNotFoundException(file);
+		throw new FileNotFoundException(name);
 	}
 
-	/** Convert a .vlog file to another format.
+	/** Get a sample input stream from a regular file.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream convertVLog(String date, String name)
-		throws IOException, VehicleEvent.Exception
+	static protected InputStream getFileInputStream(String date,
+		String name) throws IOException
+	{
+		return new FileInputStream(getDatePath(date) + File.separator +
+			name);
+	}
+
+	/** Get a sample input stream by binning a .vlog file.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @return InputStream from which sample data can be read. */
+	static protected InputStream getBinnedVLogInputStream(String date,
+		String name) throws IOException, VehicleEvent.Exception
 	{
 		SampleBin bin = null;
 		if(name.endsWith(".v30"))
