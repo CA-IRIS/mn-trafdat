@@ -12,36 +12,36 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-package us.mn.state.dot.data;
+package us.mn.state.dot.trafdat;
 
 /**
- * Bin for storing volume sample data
+ * Bin for storing speed sample data
  *
  * @author Douglas Lau
  */
-public class VolumeSampleBin implements SampleBin {
+public class SpeedSampleBin implements SampleBin {
 
-	/** Binned 30-second volume data */
-	protected final byte[] vol = new byte[SAMPLES_PER_DAY];
+	/** Binned 30-second speed data */
+	protected final byte[] spd = new byte[SAMPLES_PER_DAY];
 
-	/** Create a new volume sample bin */
-	public VolumeSampleBin() {
+	/** Create a new speed sample bin */
+	public SpeedSampleBin() {
 		for(int i = 0; i < SAMPLES_PER_DAY; i++)
-			vol[i] = SampleData.MISSING_DATA;
+			spd[i] = SampleData.MISSING_DATA;
 	}
 
 	/** Add one data sample to the bin */
 	public void addSample(SampleData sam) {
-		byte v = (byte)sam.getVolume();
-		if(v >= 0) {
+		byte s = (byte)sam.getSpeed();
+		if(s >= 0) {
 			int p = sam.getPeriod();
 			if(p >= 0 && p < SAMPLES_PER_DAY)
-				vol[p] = v;
+				spd[p] = s;
 		}
 	}
 
 	/** Get the binned data */
 	public byte[] getData() {
-		return vol;
+		return spd;
 	}
 }

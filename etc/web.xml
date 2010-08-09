@@ -7,7 +7,7 @@
 <web-app>
 	<servlet>
 		<servlet-name>DataServer</servlet-name>
-		<servlet-class>us.mn.state.dot.data.DataServer</servlet-class>
+		<servlet-class>us.mn.state.dot.trafdat.DataServer</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>

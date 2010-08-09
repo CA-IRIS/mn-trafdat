@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-package us.mn.state.dot.data;
+package us.mn.state.dot.trafdat;
 
 /**
  * Class to bin vehicle event data into sample data periods.
