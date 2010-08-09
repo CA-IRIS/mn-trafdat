@@ -50,7 +50,9 @@ public class DataServer extends HttpServlet {
 	/** Path to directory containing traffic data files */
 	static protected final String BASE_PATH = "/data/traffic";
 
-	/** Split a request path into component parts */
+	/** Split a request path into component parts.
+	 * @param p Request path
+	 * @return Array of path components. */
 	static private String[] splitRequestPath(String p) {
 		if(p != null) {
 			while(p.startsWith("/"))
@@ -60,7 +62,9 @@ public class DataServer extends HttpServlet {
 		return new String[0];
 	}
 
-	/** Check if the given year is valid */
+	/** Check if the given year is valid.
+	 * @param year String year (4 digits, yyyy).
+	 * @return true if year is valid, otherwise false */
 	static protected boolean isValidYear(String year) {
 		try {
 			Integer.parseInt(year);
@@ -71,7 +75,9 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Check if the given date is valid */
+	/** Check if the given date is valid.
+	 * @param date String date (8 digits yyyyMMdd)
+	 * @return true if date is valid, otherwise false */
 	static protected boolean isValidDate(String date) {
 		try {
 			Integer.parseInt(date);
@@ -82,7 +88,9 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Check if the given sample file name is valid */
+	/** Check if the given sample file name is valid.
+	 * @param name Name of sample file.
+	 * @return true if name is valid, otherwise false */
 	static protected boolean isValidSampleFile(String name) {
 		if(name.length() > MAX_FILENAME_LENGTH)
 			return false;
@@ -122,7 +130,10 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Process a traffic data request */
+	/** Process a traffic data request from a client.
+	 * @param pathInfo Path of requested resource.
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
 	protected boolean processRequest(String pathInfo,
 		HttpServletResponse response) throws IOException,
 		VehicleEvent.Exception
@@ -138,7 +149,10 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Process a request for the available dates for a given year */
+	/** Process a request for the available dates for a given year.
+	 * @param year String year (4 digits, yyyy).
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
 	protected boolean processDateRequest(String year,
 		HttpServletResponse response) throws IOException
 	{
@@ -159,14 +173,18 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Write out the dates available for the given year */
+	/** Write out the dates available for the given year.
+	 * @param year String year (4 digits, yyyy).
+	 * @param w Writer to output response. */
 	protected void writeDates(String year, Writer w) throws IOException {
 		File f = new File(BASE_PATH, year);
 		if(f.canRead() && f.isDirectory())
 			writeDates(f, w);
 	}
 
-	/** Write out the dates available for the given directory */
+	/** Write out the dates available for the given directory.
+	 * @param path Path to year archive.
+	 * @param w Writer to output response. */
 	protected void writeDates(File path, Writer w) throws IOException {
 		for(String name: path.list()) {
 			String date = getTrafficDate(path, name);
@@ -175,7 +193,10 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Get the date string for the given file */
+	/** Get the date string for the given file.
+	 * @param path Path to year archive.
+	 * @param name Name of file in archive.
+	 * @return Date represented by file, or null */
 	static protected String getTrafficDate(File path, String name) {
 		if(name.length() < 8)
 			return null;
@@ -192,7 +213,12 @@ public class DataServer extends HttpServlet {
 		return null;
 	}
 
-	/** Process a sample data request */
+	/** Process a sample data request.
+	 * @param year String year (4 digits, yyyy).
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
 	protected boolean processSampleRequest(String year, String date,
 		String name, HttpServletResponse response) throws IOException,
 		VehicleEvent.Exception
@@ -221,7 +247,10 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Get an InputStream for the given date */
+	/** Get an InputStream for the given date.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @return InputStream from which sample data can be read. */
 	static protected InputStream getTrafficInputStream(String date,
 		String name) throws IOException, VehicleEvent.Exception
 	{
@@ -239,13 +268,18 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Get the file path to the given date */
+	/** Get the file path to the given date.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @return Path to file in sample archive. */
 	static protected String getDatePath(String date) {
 		String year = date.substring(0, 4);
 		return BASE_PATH + File.separator + year + File.separator +date;
 	}
 
-	/** Get an InputStream from a zip (traffic) file */
+	/** Get an InputStream from a zip (traffic) file.
+	 * @param dir Directory containing .traffic files.
+	 * @param file Name of sample file within .traffic file.
+	 * @return InputStream from which sample data can be read. */
 	static protected InputStream getStreamZip(String dir, String file)
 		throws IOException
 	{
@@ -261,7 +295,10 @@ public class DataServer extends HttpServlet {
 		throw new FileNotFoundException(file);
 	}
 
-	/** Convert a .vlog file to another format */
+	/** Convert a .vlog file to another format.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @return InputStream from which sample data can be read. */
 	static protected InputStream convertVLog(String date, String name)
 		throws IOException, VehicleEvent.Exception
 	{
@@ -280,7 +317,9 @@ public class DataServer extends HttpServlet {
 		throw new FileNotFoundException(name);
 	}
 
-	/** Create and process a vehicle event log */
+	/** Create and process a vehicle event log.
+	 * @param in InputStream to read .vlog events.
+	 * @return Vehicle event log object. */
 	static protected VehicleEventLog createVLog(InputStream in)
 		throws IOException, VehicleEvent.Exception
 	{
@@ -298,12 +337,16 @@ public class DataServer extends HttpServlet {
 		}
 	}
 
-	/** Get the file name with .vlog extension */
+	/** Get the file name with .vlog extension.
+	 * @param name Sample file name.
+	 * @return Name of corresponding .vlog sample file. */
 	static protected String getVLogName(String name) {
 		return name.substring(0, name.length() - 3) + "vlog";
 	}
 
-	/** Send data from the given input stream to the response */
+	/** Send data from the given input stream to the response.
+	 * @param data Array of data to send.
+	 * @param response Servlet response object. */
 	protected void sendData(byte[] data, HttpServletResponse response)
 		throws IOException
 	{
