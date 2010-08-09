@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -152,6 +153,8 @@ public class TrafdatServlet extends HttpServlet {
 		switch(p.length) {
 		case 1:
 			return processDateRequest(p[0], response);
+		case 2:
+			return processFileRequest(p[0], p[1], response);
 		case 3:
 			return processSampleRequest(p[0], p[1], p[2], response);
 		default:
@@ -221,6 +224,57 @@ public class TrafdatServlet extends HttpServlet {
 		if(name.length() == 16 && name.endsWith(EXT))
 			return date;
 		return null;
+	}
+
+	/** Process a sample data request.
+	 * @param year String year (4 digits, yyyy).
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	protected boolean processFileRequest(String year, String date,
+		HttpServletResponse response) throws IOException
+	{
+		if(!isValidYear(year))
+			return false;
+		if(!isValidDate(date) || !date.startsWith(year))
+			return false;
+		OutputStream out = response.getOutputStream();
+		try {
+			OutputStreamWriter writer =
+				new OutputStreamWriter(out);
+			BufferedWriter w = new BufferedWriter(writer);
+			writeFiles(date, w);
+			w.flush();
+			w.close();
+			return true;
+		}
+		finally {
+			out.close();
+		}
+	}
+
+	/** Write out the dates available for the given year.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param w Writer to output response. */
+	protected void writeFiles(String date, Writer w) throws IOException {
+		File traffic = new File(getDatePath(date) + EXT);
+		if(traffic.canRead() && traffic.isFile()) {
+			ZipFile zf = new ZipFile(traffic);
+			Enumeration e = zf.entries();
+			while(e.hasMoreElements()) {
+				ZipEntry ze = (ZipEntry)e.nextElement();
+				String name = ze.getName();
+				if(isValidSampleFile(name))
+					w.write(name + "\n");
+			}
+		}
+		File dir = new File(getDatePath(date));
+		if(dir.canRead() && dir.isDirectory()) {
+			for(String name: dir.list()) {
+				if(isValidSampleFile(name))
+					w.write(name + "\n");
+			}
+		}
 	}
 
 	/** Process a sample data request.
