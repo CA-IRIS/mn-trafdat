@@ -127,11 +127,14 @@ public class DataServer extends HttpServlet {
 		VehicleEvent.Exception
 	{
 		String[] p = splitRequestPath(pathInfo);
-		if(p.length == 1)
+		switch(p.length) {
+		case 1:
 			return processDateRequest(p[0], response);
-		if(p.length != 3)
+		case 3:
+			return processSampleRequest(p[0], p[1], p[2], response);
+		default:
 			return false;
-		return processSampleRequest(p[0], p[1], p[2], response);
+		}
 	}
 
 	/** Process a request for the available dates for a given year */
