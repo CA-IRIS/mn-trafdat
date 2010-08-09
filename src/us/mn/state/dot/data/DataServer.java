@@ -16,6 +16,7 @@ package us.mn.state.dot.data;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -216,11 +217,11 @@ public class DataServer extends HttpServlet {
 		}
 		catch(FileNotFoundException e) {
 			try {
-				byte[] data = convertVLog(date, name);
-				if(data != null) {
-					sendData(data, response);
-					return true;
-				}
+				InputStream in = convertVLog(date, name);
+				byte[] data = new byte[in.available()];
+				in.read(data);
+				sendData(data, response);
+				return true;
 			}
 			catch(FileNotFoundException e2) {
 				// Ignore
@@ -231,7 +232,7 @@ public class DataServer extends HttpServlet {
 	}
 
 	/** Convert a .vlog file to another format */
-	protected byte[] convertVLog(String date, String name)
+	protected InputStream convertVLog(String date, String name)
 		throws IOException, VehicleEvent.Exception
 	{
 		SampleBin bin = null;
@@ -244,9 +245,9 @@ public class DataServer extends HttpServlet {
 			VehicleEventLog log = createVLog(
 				getTrafficInputStream(date, n));
 			log.bin30SecondSamples(bin);
-			return bin.getData();
+			return new ByteArrayInputStream(bin.getData());
 		}
-		return null;
+		throw new FileNotFoundException(name);
 	}
 
 	/** Create and process a vehicle event log */
