@@ -253,7 +253,7 @@ public class TrafdatServlet extends HttpServlet {
 		}
 	}
 
-	/** Write out the dates available for the given year.
+	/** Write out the samples files available for the given date.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param w Writer to output response. */
 	protected void writeFiles(String date, Writer w) throws IOException {
