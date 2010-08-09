@@ -36,6 +36,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
+ * A servlet for serving IRIS traffic sample data.
+ *
  * @author john3tim
  * @author Douglas Lau
  */
