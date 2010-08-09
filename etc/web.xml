@@ -6,12 +6,12 @@
 
 <web-app>
 	<servlet>
-		<servlet-name>DataServer</servlet-name>
-		<servlet-class>us.mn.state.dot.trafdat.DataServer</servlet-class>
+		<servlet-name>Trafdat</servlet-name>
+		<servlet-class>us.mn.state.dot.trafdat.TrafdatServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
-		<servlet-name>DataServer</servlet-name>
+		<servlet-name>Trafdat</servlet-name>
 		<url-pattern>*</url-pattern>
 	</servlet-mapping>
 </web-app>

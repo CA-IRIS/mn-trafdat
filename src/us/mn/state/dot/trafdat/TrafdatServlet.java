@@ -39,7 +39,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author john3tim
  * @author Douglas Lau
  */
-public class DataServer extends HttpServlet {
+public class TrafdatServlet extends HttpServlet {
 
 	/** Maximum length of a data filename */
 	static protected final int MAX_FILENAME_LENGTH = 20;
