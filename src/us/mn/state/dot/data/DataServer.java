@@ -236,11 +236,11 @@ public class DataServer extends HttpServlet {
 		String name) throws IOException
 	{
 		try {
-			return new FileInputStream(getDatePath(date) +
-				File.separator + name);
+			return getStreamZip(getDatePath(date), name);
 		}
 		catch(FileNotFoundException e) {
-			return getStreamZip(getDatePath(date), name);
+			return new FileInputStream(getDatePath(date) +
+				File.separator + name);
 		}
 	}
 
