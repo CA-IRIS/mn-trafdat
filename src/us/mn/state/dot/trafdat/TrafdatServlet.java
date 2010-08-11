@@ -48,7 +48,7 @@ import javax.servlet.http.HttpServletResponse;
 public class TrafdatServlet extends HttpServlet {
 
 	/** Maximum length of a data filename */
-	static protected final int MAX_FILENAME_LENGTH = 20;
+	static protected final int MAX_FILENAME_LENGTH = 24;
 
 	/** Traffic file extension */
 	static protected final String EXT = ".traffic";
