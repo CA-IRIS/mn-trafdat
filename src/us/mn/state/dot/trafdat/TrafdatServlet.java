@@ -14,9 +14,12 @@
  */
 package us.mn.state.dot.trafdat;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -99,18 +102,46 @@ public class TrafdatServlet extends HttpServlet {
 		}
 	}
 
+	/** Check if the given file name is too long.
+	 * @param name Name of sample file.
+	 * @return true if name is too long, otherwise false */
+	static protected boolean isFileNameTooLong(String name) {
+		return name.length() > MAX_FILENAME_LENGTH;
+	}
+
+	/** Check if the given file name is a JSON file.
+	 * @param name Name of sample file.
+	 * @return true if name is valid, otherwise false */
+	static protected boolean isJsonFile(String name) {
+		return name.endsWith(".json");
+	}
+
 	/** Check if the given sample file name is valid.
 	 * @param name Name of sample file.
 	 * @return true if name is valid, otherwise false */
 	static protected boolean isValidSampleFile(String name) {
-		if(name.length() > MAX_FILENAME_LENGTH)
-			return false;
+		return isBinnedFile(name) || name.endsWith(".vlog");
+	}
+
+	/** Check if the given file name is a binned sample file.
+	 * @param name Name of sample file.
+	 * @return true if name is for a binned sample file, otherwise false */
+	static protected boolean isBinnedFile(String name) {
 		return name.endsWith(".v30") ||
 		       name.endsWith(".c30") ||
 		       name.endsWith(".s30") ||
-		       name.endsWith(".vlog") ||
 		       name.endsWith(".pr60") ||
 		       name.endsWith(".pt60");
+	}
+
+	/** Get a sample reader for the specified sample file name.
+	 * @param name Name of sample file.
+	 * @return SampleReader to read samples from the file. */
+	static protected SampleReader getSampleReader(String name) {
+		if(name.endsWith(".c30") || name.endsWith(".pr60"))
+			return new ShortSampleReader();
+		else
+			return new ByteSampleReader();
 	}
 
 	/** Initialize the servlet */
@@ -291,9 +322,54 @@ public class TrafdatServlet extends HttpServlet {
 			return false;
 		if(!isValidDate(date) || !date.startsWith(year))
 			return false;
-		if(!isValidSampleFile(name))
+		if(isFileNameTooLong(name))
 			return false;
 		try {
+			if(isJsonFile(name))
+				return processJsonRequest(date, name, response);
+			else
+				return processSampleRequest(date,name,response);
+		}
+		catch(FileNotFoundException e) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return true;
+		}
+	}
+
+	/** Process a JSON data request.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	protected boolean processJsonRequest(String date, String name,
+		HttpServletResponse response) throws IOException,
+		VehicleEvent.Exception
+	{
+		name = name.substring(0, name.length() - 5);
+		if(isBinnedFile(name)) {
+			InputStream in = getTrafficInputStream(date, name);
+			try {
+				sendJsonData(in, response,
+					getSampleReader(name));
+				return true;
+			}
+			finally {
+				in.close();
+			}
+		} else
+			return false;
+	}
+
+	/** Process a sample data request.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	protected boolean processSampleRequest(String date, String name,
+		HttpServletResponse response) throws IOException,
+		VehicleEvent.Exception
+	{
+		if(isValidSampleFile(name)) {
 			InputStream in = getTrafficInputStream(date, name);
 			try {
 				sendData(in, response);
@@ -302,11 +378,8 @@ public class TrafdatServlet extends HttpServlet {
 			finally {
 				in.close();
 			}
-		}
-		catch(FileNotFoundException e) {
-			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			return true;
-		}
+		} else
+			return false;
 	}
 
 	/** Get an InputStream for the given date.
@@ -437,5 +510,73 @@ public class TrafdatServlet extends HttpServlet {
 		finally {
 			out.close();
 		}
+	}
+
+	/** Interface for sample data readers */
+	static protected interface SampleReader {
+		int getSample(DataInputStream dis) throws IOException;
+	}
+
+	/** Class to read byte samples from a data input stream */
+	static protected class ByteSampleReader implements SampleReader {
+		public int getSample(DataInputStream dis) throws IOException {
+			return dis.readByte();
+		}
+	}
+
+	/** Class to read short samples from a data input stream */
+	static protected class ShortSampleReader implements SampleReader {
+		public int getSample(DataInputStream dis) throws IOException {
+			return dis.readShort();
+		}
+	}
+
+	/** Send data from the given input stream to the response as JSON.
+	 * @param in Input stream to read data from.
+	 * @param response Servlet response object. */
+	static protected void sendJsonData(InputStream in,
+		HttpServletResponse response, SampleReader sr)
+		throws IOException
+	{
+		BufferedInputStream bis = new BufferedInputStream(in);
+		DataInputStream dis = new DataInputStream(bis);
+		response.setContentType("application/json");
+		OutputStream out = response.getOutputStream();
+		try {
+			OutputStreamWriter osw = new OutputStreamWriter(out);
+			BufferedWriter bw = new BufferedWriter(osw);
+			bw.write('[');
+			boolean first = true;
+			while(true) {
+				try {
+					String sam = formatJson(
+						sr.getSample(dis));
+					if(first)
+						bw.write(sam);
+					else
+						bw.write("," + sam);
+					first = false;
+				}
+				catch(EOFException e) {
+					break;
+				}
+			}
+			bw.write(']');
+			bw.flush();
+			bw.close();
+		}
+		finally {
+			out.close();
+		}
+	}
+
+	/** Format a number as a JSON value.
+	 * @param val Number to format.
+	 * @return JSON value. */
+	static protected String formatJson(int val) {
+		if(val >= 0)
+			return Integer.toString(val);
+		else
+			return "null";
 	}
 }
