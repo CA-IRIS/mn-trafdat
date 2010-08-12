@@ -30,6 +30,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Enumeration;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -195,7 +197,7 @@ public class TrafdatServlet extends HttpServlet {
 		case 1:
 			return processDateRequest(p[0], response);
 		case 2:
-			return processFileRequest(p[0], p[1], response);
+			return processSensorRequest(p[0], p[1], response);
 		case 3:
 			return processSampleRequest(p[0], p[1], p[2], response);
 		default:
@@ -274,18 +276,28 @@ public class TrafdatServlet extends HttpServlet {
 		return null;
 	}
 
-	/** Process a sample data request.
+	/** Process a sensor list request.
 	 * @param year String year (4 digits, yyyy).
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processFileRequest(String year, String date,
+	protected boolean processSensorRequest(String year, String date,
 		HttpServletResponse response) throws IOException
 	{
 		if(isValidYearDate(year, date)) {
+			Set<String> sensors = lookupSensors(date);
+			response.setContentType("application/json");
 			Writer w = createWriter(response);
 			try {
-				writeFiles(date, w);
+				w.write('[');
+				boolean first = true;
+				for(String s: sensors) {
+					if(!first)
+						w.write(',');
+					w.write('"' + s + '"');
+					first = false;
+				}
+				w.write(']');
 				w.flush();
 			}
 			finally {
@@ -296,10 +308,11 @@ public class TrafdatServlet extends HttpServlet {
 			return false;
 	}
 
-	/** Write out the samples files available for the given date.
+	/** Lookup the sensors available for the given date.
 	 * @param date String date (8 digits yyyyMMdd).
-	 * @param w Writer to output response. */
-	protected void writeFiles(String date, Writer w) throws IOException {
+	 * @return A set of sensor IDs available for the date. */
+	protected Set<String> lookupSensors(String date) throws IOException {
+		TreeSet<String> sensors = new TreeSet<String>();
 		File traffic = new File(getDatePath(date) + EXT);
 		if(traffic.canRead() && traffic.isFile()) {
 			ZipFile zf = new ZipFile(traffic);
@@ -308,16 +321,28 @@ public class TrafdatServlet extends HttpServlet {
 				ZipEntry ze = (ZipEntry)e.nextElement();
 				String name = ze.getName();
 				if(isValidSampleFile(name))
-					w.write(name + "\n");
+					sensors.add(getSensorId(name));
 			}
 		}
 		File dir = new File(getDatePath(date));
 		if(dir.canRead() && dir.isDirectory()) {
 			for(String name: dir.list()) {
 				if(isValidSampleFile(name))
-					w.write(name + "\n");
+					sensors.add(getSensorId(name));
 			}
 		}
+		return sensors;
+	}
+
+	/** Get the sensor ID for a given file name.
+	 * @param name Sample file name.
+	 * @return Sensor ID. */
+	static protected String getSensorId(String name) {
+		int i = name.indexOf('.');
+		if(i > 0)
+			return name.substring(0, i);
+		else
+			return name;
 	}
 
 	/** Process a sample data request.
@@ -558,10 +583,9 @@ public class TrafdatServlet extends HttpServlet {
 				try {
 					String sam = formatJson(
 						sr.getSample(dis));
-					if(first)
-						w.write(sam);
-					else
-						w.write("," + sam);
+					if(!first)
+						w.write(',');
+					w.write(sam);
 					first = false;
 				}
 				catch(EOFException e) {
