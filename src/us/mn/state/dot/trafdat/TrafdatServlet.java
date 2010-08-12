@@ -202,19 +202,26 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		if(!isValidYear(year))
 			return false;
-		OutputStream out = response.getOutputStream();
+		Writer w = createWriter(response);
 		try {
-			OutputStreamWriter writer =
-				new OutputStreamWriter(out);
-			BufferedWriter w = new BufferedWriter(writer);
 			writeDates(year, w);
 			w.flush();
-			w.close();
 			return true;
 		}
 		finally {
-			out.close();
+			w.close();
 		}
+	}
+
+	/** Create a buffered writer for the response.
+	 * @param response Servlet response.
+	 * @return Buffered writer for the response. */
+	static protected Writer createWriter(HttpServletResponse response)
+		throws IOException
+	{
+		OutputStream os = response.getOutputStream();
+		OutputStreamWriter osw = new OutputStreamWriter(os);
+		return new BufferedWriter(osw);
 	}
 
 	/** Write out the dates available for the given year.
@@ -269,18 +276,14 @@ public class TrafdatServlet extends HttpServlet {
 			return false;
 		if(!isValidDate(date) || !date.startsWith(year))
 			return false;
-		OutputStream out = response.getOutputStream();
+		Writer w = createWriter(response);
 		try {
-			OutputStreamWriter writer =
-				new OutputStreamWriter(out);
-			BufferedWriter w = new BufferedWriter(writer);
 			writeFiles(date, w);
 			w.flush();
-			w.close();
 			return true;
 		}
 		finally {
-			out.close();
+			w.close();
 		}
 	}
 
@@ -541,32 +544,29 @@ public class TrafdatServlet extends HttpServlet {
 		BufferedInputStream bis = new BufferedInputStream(in);
 		DataInputStream dis = new DataInputStream(bis);
 		response.setContentType("application/json");
-		OutputStream out = response.getOutputStream();
+		Writer w = createWriter(response);
 		try {
-			OutputStreamWriter osw = new OutputStreamWriter(out);
-			BufferedWriter bw = new BufferedWriter(osw);
-			bw.write('[');
+			w.write('[');
 			boolean first = true;
 			while(true) {
 				try {
 					String sam = formatJson(
 						sr.getSample(dis));
 					if(first)
-						bw.write(sam);
+						w.write(sam);
 					else
-						bw.write("," + sam);
+						w.write("," + sam);
 					first = false;
 				}
 				catch(EOFException e) {
 					break;
 				}
 			}
-			bw.write(']');
-			bw.flush();
-			bw.close();
+			w.write(']');
+			w.flush();
 		}
 		finally {
-			out.close();
+			w.close();
 		}
 	}
 
