@@ -102,11 +102,21 @@ public class TrafdatServlet extends HttpServlet {
 		}
 	}
 
-	/** Check if the given file name is too long.
+	/** Check if the given year and date is valid.
+	 * @param year String year (4 digits, yyyy).
+	 * @param date String date (8 digits yyyyMMdd)
+	 * @return true if date is valid, otherwise false */
+	static protected boolean isValidYearDate(String year, String date) {
+		return isValidYear(year) &&
+		       isValidDate(date) &&
+		       date.startsWith(year);
+	}
+
+	/** Check if the given file name is valid.
 	 * @param name Name of sample file.
-	 * @return true if name is too long, otherwise false */
-	static protected boolean isFileNameTooLong(String name) {
-		return name.length() > MAX_FILENAME_LENGTH;
+	 * @return true if name is valid, otherwise false */
+	static protected boolean isFileNameValid(String name) {
+		return name.length() <= MAX_FILENAME_LENGTH;
 	}
 
 	/** Check if the given file name is a JSON file.
@@ -272,19 +282,18 @@ public class TrafdatServlet extends HttpServlet {
 	protected boolean processFileRequest(String year, String date,
 		HttpServletResponse response) throws IOException
 	{
-		if(!isValidYear(year))
-			return false;
-		if(!isValidDate(date) || !date.startsWith(year))
-			return false;
-		Writer w = createWriter(response);
-		try {
-			writeFiles(date, w);
-			w.flush();
+		if(isValidYearDate(year, date)) {
+			Writer w = createWriter(response);
+			try {
+				writeFiles(date, w);
+				w.flush();
+			}
+			finally {
+				w.close();
+			}
 			return true;
-		}
-		finally {
-			w.close();
-		}
+		} else
+			return false;
 	}
 
 	/** Write out the samples files available for the given date.
@@ -321,22 +330,41 @@ public class TrafdatServlet extends HttpServlet {
 		String name, HttpServletResponse response) throws IOException,
 		VehicleEvent.Exception
 	{
-		if(!isValidYear(year))
-			return false;
-		if(!isValidDate(date) || !date.startsWith(year))
-			return false;
-		if(isFileNameTooLong(name))
-			return false;
-		try {
-			if(isJsonFile(name))
-				return processJsonRequest(date, name, response);
-			else
+		if(isValidYearDate(year, date) && isFileNameValid(name)) {
+			try {
 				return processSampleRequest(date,name,response);
-		}
-		catch(FileNotFoundException e) {
-			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			return true;
-		}
+			}
+			catch(FileNotFoundException e) {
+				response.setStatus(
+					HttpServletResponse.SC_NOT_FOUND);
+				return true;
+			}
+		} else
+			return false;
+	}
+
+	/** Process a sample data request.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	protected boolean processSampleRequest(String date, String name,
+		HttpServletResponse response) throws IOException,
+		VehicleEvent.Exception
+	{
+		if(isJsonFile(name))
+			return processJsonRequest(date, name, response);
+		else if(isValidSampleFile(name)) {
+			InputStream in = getTrafficInputStream(date, name);
+			try {
+				sendData(in, response);
+				return true;
+			}
+			finally {
+				in.close();
+			}
+		} else
+			return false;
 	}
 
 	/** Process a JSON data request.
@@ -354,28 +382,6 @@ public class TrafdatServlet extends HttpServlet {
 			try {
 				sendJsonData(in, response,
 					getSampleReader(name));
-				return true;
-			}
-			finally {
-				in.close();
-			}
-		} else
-			return false;
-	}
-
-	/** Process a sample data request.
-	 * @param date String date (8 digits yyyyMMdd).
-	 * @param name Sample file name.
-	 * @param response Servlet response object.
-	 * @return true if request if valid, otherwise false */
-	protected boolean processSampleRequest(String date, String name,
-		HttpServletResponse response) throws IOException,
-		VehicleEvent.Exception
-	{
-		if(isValidSampleFile(name)) {
-			InputStream in = getTrafficInputStream(date, name);
-			try {
-				sendData(in, response);
 				return true;
 			}
 			finally {
