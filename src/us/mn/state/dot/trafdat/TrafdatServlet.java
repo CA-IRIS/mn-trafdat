@@ -54,7 +54,7 @@ public class TrafdatServlet extends HttpServlet {
 	static protected final String EXT = ".traffic";
 
 	/** Path to directory containing traffic data files */
-	static protected final String BASE_PATH = "/data/traffic";
+	static protected final String BASE_PATH = "/var/lib/iris/traffic";
 
 	/** Get the file path to the given date.
 	 * @param date String date (8 digits yyyyMMdd).
