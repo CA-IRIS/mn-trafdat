@@ -168,14 +168,19 @@ public class TrafdatServlet extends HttpServlet {
 		String pathInfo = request.getPathInfo();
 		try {
 			if(!processRequest(pathInfo, response)) {
-				response.setStatus(
+				response.sendError(
 					HttpServletResponse.SC_BAD_REQUEST);
 			}
 		}
 		catch(IOException e) {
 			e.printStackTrace();
-			response.setStatus(
-				HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			try {
+				response.sendError(HttpServletResponse.
+					SC_INTERNAL_SERVER_ERROR);
+			}
+			catch(IOException ee) {
+				ee.printStackTrace();
+			}
 		}
 	}
 
@@ -353,7 +358,7 @@ public class TrafdatServlet extends HttpServlet {
 				return processSampleRequest(date,name,response);
 			}
 			catch(FileNotFoundException e) {
-				response.setStatus(
+				response.sendError(
 					HttpServletResponse.SC_NOT_FOUND);
 				return true;
 			}
