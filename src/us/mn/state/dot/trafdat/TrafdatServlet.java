@@ -1,6 +1,6 @@
 /*
  * Project: Trafdat
- * Copyright (C) 2007-2010  Minnesota Department of Transportation
+ * Copyright (C) 2007-2011  Minnesota Department of Transportation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -177,11 +177,6 @@ public class TrafdatServlet extends HttpServlet {
 			response.setStatus(
 				HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
-		catch(VehicleEvent.Exception e) {
-			e.printStackTrace();
-			response.setStatus(
-				HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-		}
 	}
 
 	/** Process a traffic data request from a client.
@@ -189,8 +184,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
 	protected boolean processRequest(String pathInfo,
-		HttpServletResponse response) throws IOException,
-		VehicleEvent.Exception
+		HttpServletResponse response) throws IOException
 	{
 		String[] p = splitRequestPath(pathInfo);
 		switch(p.length) {
@@ -352,8 +346,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
 	protected boolean processSampleRequest(String year, String date,
-		String name, HttpServletResponse response) throws IOException,
-		VehicleEvent.Exception
+		String name, HttpServletResponse response) throws IOException
 	{
 		if(isValidYearDate(year, date) && isFileNameValid(name)) {
 			try {
@@ -374,8 +367,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
 	protected boolean processSampleRequest(String date, String name,
-		HttpServletResponse response) throws IOException,
-		VehicleEvent.Exception
+		HttpServletResponse response) throws IOException
 	{
 		if(isJsonFile(name))
 			return processJsonRequest(date, name, response);
@@ -398,8 +390,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
 	protected boolean processJsonRequest(String date, String name,
-		HttpServletResponse response) throws IOException,
-		VehicleEvent.Exception
+		HttpServletResponse response) throws IOException
 	{
 		name = name.substring(0, name.length() - 5);
 		if(isBinnedFile(name)) {
@@ -421,7 +412,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param name Sample file name.
 	 * @return InputStream from which sample data can be read. */
 	static protected InputStream getTrafficInputStream(String date,
-		String name) throws IOException, VehicleEvent.Exception
+		String name) throws IOException
 	{
 		try {
 			return getZipInputStream(date, name);
@@ -472,7 +463,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param name Sample file name.
 	 * @return InputStream from which sample data can be read. */
 	static protected InputStream getBinnedVLogInputStream(String date,
-		String name) throws IOException, VehicleEvent.Exception
+		String name) throws IOException
 	{
 		SampleBin bin = createSampleBin(name);
 		if(bin != null) {
@@ -501,7 +492,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param in InputStream to read .vlog events.
 	 * @return Vehicle event log object. */
 	static protected VehicleEventLog createVLog(InputStream in)
-		throws IOException, VehicleEvent.Exception
+		throws IOException
 	{
 		try {
 			InputStreamReader reader = new InputStreamReader(in);

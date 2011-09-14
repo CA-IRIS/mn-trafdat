@@ -1,6 +1,6 @@
 /*
  * Project: Trafdat
- * Copyright (C) 2007-2010  Minnesota Department of Transportation
+ * Copyright (C) 2007-2011  Minnesota Department of Transportation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,9 +20,6 @@ package us.mn.state.dot.trafdat;
  * @author Douglas Lau
  */
 public class VehicleEvent {
-
-	/** Vehicle event exception */
-	static public class Exception extends java.lang.Exception { }
 
 	/** Parse an integer from a vehicle log */
 	static protected Integer parseInt(String v) {
@@ -115,7 +112,7 @@ public class VehicleEvent {
 	}
 
 	/** Set headway/timestamp based on previous vehicle stamp */
-	public void setPreviousStamp(int pstamp) throws VehicleEvent.Exception {
+	public void setPreviousStamp(int pstamp) {
 		if(headway != null)
 			setStamp(pstamp + headway);
 		if(stamp != null)
@@ -134,22 +131,13 @@ public class VehicleEvent {
 	}
 
 	/** Set the headway if not already set */
-	public void setHeadway(int h) throws VehicleEvent.Exception {
-		if(headway == null) {
-			if(h <= 0)
-				throw new VehicleEvent.Exception();
+	public void setHeadway(int h) {
+		if(headway == null && h > 0)
 			headway = h;
-		}
 	}
 
 	/** Get the vehicle speed */
 	public Integer getSpeed() {
 		return speed;
-	}
-
-	/** Check the vehicle event is valid */
-	public void check() throws VehicleEvent.Exception {
-		if(stamp == null && !reset)
-			throw new VehicleEvent.Exception();
 	}
 }

@@ -77,6 +77,11 @@ public class SampleData {
 		reset = true;
 	}
 
+	/** Get the reset flag */
+	public boolean isReset() {
+		return reset;
+	}
+
 	/** Clear the sample data for a new period */
 	public void clear(int p) {
 		reset = false;

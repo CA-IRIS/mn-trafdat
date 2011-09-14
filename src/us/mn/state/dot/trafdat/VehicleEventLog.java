@@ -1,6 +1,6 @@
 /*
  * Project: Trafdat
- * Copyright (C) 2007-2010  Minnesota Department of Transportation
+ * Copyright (C) 2007-2011  Minnesota Department of Transportation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,11 @@ import java.util.ListIterator;
  */
 public class VehicleEventLog {
 
+	/** Get the 30-second period for the given timestamp (ms) */
+	static protected int getPeriod30Second(int ms) {
+		return ms / 30000;
+	}
+
 	/** List of all vehicle events in the log */
 	protected final LinkedList<VehicleEvent> events =
 		new LinkedList<VehicleEvent>();
@@ -40,7 +45,7 @@ public class VehicleEventLog {
 	}
 
 	/** Propogate timestamps forward to following events */
-	public void propogateStampsForward() throws VehicleEvent.Exception {
+	public void propogateStampsForward() {
 		Integer stamp = null;
 		for(VehicleEvent e: events) {
 			if(stamp != null)
@@ -62,7 +67,7 @@ public class VehicleEventLog {
 	}
 
 	/** Interpolate timestamps in gaps where they are missing */
-	public void interpolateMissingStamps() throws VehicleEvent.Exception {
+	public void interpolateMissingStamps() {
 		Integer stamp = null;
 		LinkedList<VehicleEvent> ev = new LinkedList<VehicleEvent>();
 		for(VehicleEvent e: events) {
@@ -87,31 +92,26 @@ public class VehicleEventLog {
 		}
 	}
 
-	/** Get the 30-second period for the given timestamp (ms) */
-	protected int getPeriod30Second(int ms) throws VehicleEvent.Exception {
-		int p = ms / 30000;
-		if(p < 0 || p > SampleBin.SAMPLES_PER_DAY)
-			throw new VehicleEvent.Exception();
-		return p;
-	}
-
 	/** Bin vehicle event data into 30 second samples */
-	public void bin30SecondSamples(SampleBin bin)
-		throws VehicleEvent.Exception
-	{
+	public void bin30SecondSamples(SampleBin bin) {
 		SampleData sam = new SampleData();
 		for(VehicleEvent e: events) {
-			e.check();
-			if(e.isReset())
+			Integer stamp = e.getStamp();
+			if(e.isReset() || stamp == null)
 				sam.setReset();
 			else {
-				int p = getPeriod30Second(e.getStamp());
-				int pp = sam.getPeriod();
-				while(p > pp) {
-					bin.addSample(sam);
-					sam.clear(++pp);
+				int p = getPeriod30Second(stamp);
+				int sp = sam.getPeriod();
+				if(sam.isReset())
+					sam.clear(p + 1);
+				else if(p >= sp) {
+					while(p > sp) {
+						bin.addSample(sam);
+						sp++;
+						sam.clear(sp);
+					}
+					sam.addEvent(e);
 				}
-				sam.addEvent(e);
 			}
 		}
 		bin.addSample(sam);
