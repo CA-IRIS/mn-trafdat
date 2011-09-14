@@ -58,18 +58,56 @@ public class TrafdatServlet extends HttpServlet {
 	/** Path to directory containing traffic data files */
 	static protected final String BASE_PATH = "/var/lib/iris/traffic";
 
+	/** Default district ID */
+	static protected final String DEFAULT_DISTRICT = "tms";
+
+	/** Get the file path to the given archive path.
+	 * @param district District ID.
+	 * @param path Archive relative path to file.
+	 * @return Path to directory in sample archive. */
+	static private File getFilePath(String district, String path) {
+		return new File(BASE_PATH + File.separator + district +
+			File.separator + path);
+	}
+
 	/** Get the file path to the given date.
+	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @return Path to file in sample archive. */
-	static protected String getDatePath(String date) {
+	static private File getDatePath(String district, String date) {
 		String year = date.substring(0, 4);
-		return BASE_PATH + File.separator + year + File.separator +date;
+		return getFilePath(district, year + File.separator + date);
+	}
+
+	/** Get the file path to the given date traffic file.
+	 * @param district District ID.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @return Path to file in sample archive. */
+	static private File getTrafficPath(String district, String date) {
+		String year = date.substring(0, 4);
+		return getFilePath(district, year + File.separator + date +EXT);
 	}
 
 	/** Split a request path into component parts.
 	 * @param p Request path
 	 * @return Array of path components. */
-	static private String[] splitRequestPath(String p) {
+	static private String[] splitRequestPath(String pathInfo) {
+		String[] p = splitPath(pathInfo);
+		// Backward compatibility stuff:
+		//    check if district path was omitted
+		if(p.length > 0 && isValidYear(p[0])) {
+			if(pathInfo.startsWith("/"))
+				return splitPath(DEFAULT_DISTRICT + pathInfo);
+			else
+				return splitPath(DEFAULT_DISTRICT+"/"+pathInfo);
+		} else
+			return p;
+	}
+
+	/** Split a path into component parts.
+	 * @param p Path
+	 * @return Array of path components. */
+	static private String[] splitPath(String p) {
 		if(p != null) {
 			while(p.startsWith("/"))
 				p = p.substring(1);
@@ -193,31 +231,49 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		String[] p = splitRequestPath(pathInfo);
 		switch(p.length) {
-		case 1:
-			return processDateRequest(p[0], response);
 		case 2:
-			return processSensorRequest(p[0], p[1], response);
+			return processDateRequest(p[0], p[1], response);
 		case 3:
-			return processSampleRequest(p[0], p[1], p[2], response);
+			return processSensorRequest(p[0], p[1], p[2], response);
+		case 4:
+			return processSampleRequest(p[0], p[1], p[2], p[3],
+				response);
 		default:
 			return false;
 		}
 	}
 
 	/** Process a request for the available dates for a given year.
+	 * @param district District ID.
 	 * @param year String year (4 digits, yyyy).
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processDateRequest(String year,
+	protected boolean processDateRequest(String district, String year,
 		HttpServletResponse response) throws IOException
 	{
-		if(!isValidYear(year))
+		if(isValidYear(year)) {
+			File f = getFilePath(district, year);
+			if(f.canRead() && f.isDirectory())
+				writeDates(f, response);
+			return true;
+		} else
 			return false;
+	}
+
+	/** Write out the dates available for the given directory.
+	 * @param path Path to year archive.
+	 * @param response Servlet response. */
+	protected void writeDates(File path, HttpServletResponse response)
+		throws IOException
+	{
 		Writer w = createWriter(response);
 		try {
-			writeDates(year, w);
+			for(String name: path.list()) {
+				String date = getTrafficDate(path, name);
+				if(date != null)
+					w.write(date + "\n");
+			}
 			w.flush();
-			return true;
 		}
 		finally {
 			w.close();
@@ -233,26 +289,6 @@ public class TrafdatServlet extends HttpServlet {
 		OutputStream os = response.getOutputStream();
 		OutputStreamWriter osw = new OutputStreamWriter(os);
 		return new BufferedWriter(osw);
-	}
-
-	/** Write out the dates available for the given year.
-	 * @param year String year (4 digits, yyyy).
-	 * @param w Writer to output response. */
-	protected void writeDates(String year, Writer w) throws IOException {
-		File f = new File(BASE_PATH, year);
-		if(f.canRead() && f.isDirectory())
-			writeDates(f, w);
-	}
-
-	/** Write out the dates available for the given directory.
-	 * @param path Path to year archive.
-	 * @param w Writer to output response. */
-	protected void writeDates(File path, Writer w) throws IOException {
-		for(String name: path.list()) {
-			String date = getTrafficDate(path, name);
-			if(date != null)
-				w.write(date + "\n");
-		}
 	}
 
 	/** Get the date string for the given file.
@@ -276,15 +312,16 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a sensor list request.
+	 * @param district District ID.
 	 * @param year String year (4 digits, yyyy).
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processSensorRequest(String year, String date,
-		HttpServletResponse response) throws IOException
+	protected boolean processSensorRequest(String district, String year,
+		String date, HttpServletResponse response) throws IOException
 	{
 		if(isValidYearDate(year, date)) {
-			Set<String> sensors = lookupSensors(date);
+			Set<String> sensors = lookupSensors(district, date);
 			response.setContentType("application/json");
 			Writer w = createWriter(response);
 			try {
@@ -308,11 +345,14 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Lookup the sensors available for the given date.
+	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @return A set of sensor IDs available for the date. */
-	protected Set<String> lookupSensors(String date) throws IOException {
+	protected Set<String> lookupSensors(String district, String date)
+		throws IOException
+	{
 		TreeSet<String> sensors = new TreeSet<String>();
-		File traffic = new File(getDatePath(date) + EXT);
+		File traffic = getTrafficPath(district, date);
 		if(traffic.canRead() && traffic.isFile()) {
 			ZipFile zf = new ZipFile(traffic);
 			Enumeration e = zf.entries();
@@ -323,7 +363,7 @@ public class TrafdatServlet extends HttpServlet {
 					sensors.add(getSensorId(name));
 			}
 		}
-		File dir = new File(getDatePath(date));
+		File dir = getDatePath(district, date);
 		if(dir.canRead() && dir.isDirectory()) {
 			for(String name: dir.list()) {
 				if(isValidSampleFile(name))
@@ -345,17 +385,20 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a sample data request.
+	 * @param district District ID.
 	 * @param year String year (4 digits, yyyy).
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processSampleRequest(String year, String date,
-		String name, HttpServletResponse response) throws IOException
+	protected boolean processSampleRequest(String district, String year,
+		String date, String name, HttpServletResponse response)
+		throws IOException
 	{
 		if(isValidYearDate(year, date) && isFileNameValid(name)) {
 			try {
-				return processSampleRequest(date,name,response);
+				return processSampleRequest(district, date,
+					name, response);
 			}
 			catch(FileNotFoundException e) {
 				response.sendError(
@@ -367,17 +410,19 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a sample data request.
+	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processSampleRequest(String date, String name,
-		HttpServletResponse response) throws IOException
+	protected boolean processSampleRequest(String district, String date,
+		String name, HttpServletResponse response) throws IOException
 	{
 		if(isJsonFile(name))
-			return processJsonRequest(date, name, response);
+			return processJsonRequest(district, date,name,response);
 		else if(isValidSampleFile(name)) {
-			InputStream in = getTrafficInputStream(date, name);
+			InputStream in = getTrafficInputStream(district, date,
+				name);
 			try {
 				sendData(in, response);
 				return true;
@@ -390,16 +435,18 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a JSON data request.
+	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processJsonRequest(String date, String name,
-		HttpServletResponse response) throws IOException
+	protected boolean processJsonRequest(String district, String date,
+		String name, HttpServletResponse response) throws IOException
 	{
 		name = name.substring(0, name.length() - 5);
 		if(isBinnedFile(name)) {
-			InputStream in = getTrafficInputStream(date, name);
+			InputStream in = getTrafficInputStream(district, date,
+				name);
 			try {
 				sendJsonData(in, response,
 					getSampleReader(name));
@@ -413,33 +460,36 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Get an InputStream for the given date.
+	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream getTrafficInputStream(String date,
-		String name) throws IOException
+	static protected InputStream getTrafficInputStream(String district,
+		String date, String name) throws IOException
 	{
 		try {
-			return getZipInputStream(date, name);
+			return getZipInputStream(district, date, name);
 		}
 		catch(FileNotFoundException e) {
 			try {
-				return getFileInputStream(date, name);
+				return getFileInputStream(district, date, name);
 			}
 			catch(FileNotFoundException ee) {
-				return getBinnedVLogInputStream(date, name);
+				return getBinnedVLogInputStream(district, date,
+					name);
 			}
 		}
 	}
 
 	/** Get a sample InputStream from a zip (traffic) file.
+	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Name of sample file within .traffic file.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream getZipInputStream(String date, String name)
-		throws IOException
+	static protected InputStream getZipInputStream(String district,
+		String date, String name) throws IOException
 	{
-		String traffic = getDatePath(date) + EXT;
+		File traffic = getTrafficPath(district, date);
 		try {
 			ZipFile zip = new ZipFile(traffic);
 			ZipEntry entry = zip.getEntry(name);
@@ -453,28 +503,30 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Get a sample input stream from a regular file.
+	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream getFileInputStream(String date,
-		String name) throws IOException
+	static protected InputStream getFileInputStream(String district,
+		String date, String name) throws IOException
 	{
-		return new FileInputStream(getDatePath(date) + File.separator +
-			name);
+		return new FileInputStream(new File(getDatePath(district, date),
+			name));
 	}
 
 	/** Get a sample input stream by binning a .vlog file.
+	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream getBinnedVLogInputStream(String date,
-		String name) throws IOException
+	static protected InputStream getBinnedVLogInputStream(String district,
+		String date, String name) throws IOException
 	{
 		SampleBin bin = createSampleBin(name);
 		if(bin != null) {
 			String n = getVLogName(name);
 			VehicleEventLog log = createVLog(
-				getTrafficInputStream(date, n));
+				getTrafficInputStream(district, date, n));
 			log.bin30SecondSamples(bin);
 			return new ByteArrayInputStream(bin.getData());
 		} else
