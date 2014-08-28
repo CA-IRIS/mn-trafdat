@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!-- ant build file for Trafdat project
-     Copyright (C) 2007-2010  Minnesota Department of Transportation
+     Copyright (C) 2007-2014  Minnesota Department of Transportation
 
      This program is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published by
@@ -68,12 +68,14 @@
 		depends="check, prepare"
 		description="Compiles all of the source files for the project.">
 		<javac destdir="${build.classes.dir}"
-			debug="on"
-			deprecation="on"
-			optimize="on"
-			target="1.5">
+		       debug="${debug}"
+		       deprecation="on"
+		       includeantruntime="true"
+		       source="1.6"
+		       target="1.6">
 			<src path="${build.src.dir}"/>
 			<classpath refid="classpath" />
+			<compilerarg value="-Xlint:unchecked"/>
 		</javac>
 	</target>
 
@@ -90,7 +92,7 @@
 		</war>
 	</target>
 
-	<!-- Create the API documentation   -->
+	<!-- Create the API documentation -->
 	<target name="javadocs"
 		depends="prepare"
 		description="Creates the javadocs for the project.">
