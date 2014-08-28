@@ -1,6 +1,6 @@
 /*
  * Project: Trafdat
- * Copyright (C) 2007-2011  Minnesota Department of Transportation
+ * Copyright (C) 2007-2014  Minnesota Department of Transportation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -195,11 +195,13 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Initialize the servlet */
+	@Override
 	public void init(ServletConfig config) throws ServletException {
 		// Nothing to initialize
 	}
 
 	/** Process an HTTP GET request */
+	@Override
 	public void doGet(HttpServletRequest request,
 		HttpServletResponse response)
 	{
