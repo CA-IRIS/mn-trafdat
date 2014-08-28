@@ -50,16 +50,16 @@ import javax.servlet.http.HttpServletResponse;
 public class TrafdatServlet extends HttpServlet {
 
 	/** Maximum length of a data filename */
-	static protected final int MAX_FILENAME_LENGTH = 24;
+	static private final int MAX_FILENAME_LENGTH = 24;
 
 	/** Traffic file extension */
-	static protected final String EXT = ".traffic";
+	static private final String EXT = ".traffic";
 
 	/** Path to directory containing traffic data files */
-	static protected final String BASE_PATH = "/var/lib/iris/traffic";
+	static private final String BASE_PATH = "/var/lib/iris/traffic";
 
 	/** Default district ID */
-	static protected final String DEFAULT_DISTRICT = "tms";
+	static private final String DEFAULT_DISTRICT = "tms";
 
 	/** Get the file path to the given archive path.
 	 * @param district District ID.
@@ -119,7 +119,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Check if the given year is valid.
 	 * @param year String year (4 digits, yyyy).
 	 * @return true if year is valid, otherwise false */
-	static protected boolean isValidYear(String year) {
+	static private boolean isValidYear(String year) {
 		try {
 			Integer.parseInt(year);
 			return year.length() == 4;
@@ -132,7 +132,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Check if the given date is valid.
 	 * @param date String date (8 digits yyyyMMdd)
 	 * @return true if date is valid, otherwise false */
-	static protected boolean isValidDate(String date) {
+	static private boolean isValidDate(String date) {
 		try {
 			Integer.parseInt(date);
 			return date.length() == 8;
@@ -146,7 +146,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param year String year (4 digits, yyyy).
 	 * @param date String date (8 digits yyyyMMdd)
 	 * @return true if date is valid, otherwise false */
-	static protected boolean isValidYearDate(String year, String date) {
+	static private boolean isValidYearDate(String year, String date) {
 		return isValidYear(year) &&
 		       isValidDate(date) &&
 		       date.startsWith(year);
@@ -155,28 +155,28 @@ public class TrafdatServlet extends HttpServlet {
 	/** Check if the given file name is valid.
 	 * @param name Name of sample file.
 	 * @return true if name is valid, otherwise false */
-	static protected boolean isFileNameValid(String name) {
+	static private boolean isFileNameValid(String name) {
 		return name.length() <= MAX_FILENAME_LENGTH;
 	}
 
 	/** Check if the given file name is a JSON file.
 	 * @param name Name of sample file.
 	 * @return true if name is valid, otherwise false */
-	static protected boolean isJsonFile(String name) {
+	static private boolean isJsonFile(String name) {
 		return name.endsWith(".json");
 	}
 
 	/** Check if the given sample file name is valid.
 	 * @param name Name of sample file.
 	 * @return true if name is valid, otherwise false */
-	static protected boolean isValidSampleFile(String name) {
+	static private boolean isValidSampleFile(String name) {
 		return isBinnedFile(name) || name.endsWith(".vlog");
 	}
 
 	/** Check if the given file name is a binned sample file.
 	 * @param name Name of sample file.
 	 * @return true if name is for a binned sample file, otherwise false */
-	static protected boolean isBinnedFile(String name) {
+	static private boolean isBinnedFile(String name) {
 		return name.endsWith(".v30") ||
 		       name.endsWith(".c30") ||
 		       name.endsWith(".s30") ||
@@ -187,7 +187,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Get a sample reader for the specified sample file name.
 	 * @param name Name of sample file.
 	 * @return SampleReader to read samples from the file. */
-	static protected SampleReader getSampleReader(String name) {
+	static private SampleReader getSampleReader(String name) {
 		if(name.endsWith(".c30") || name.endsWith(".pr60"))
 			return new ShortSampleReader();
 		else
@@ -228,7 +228,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param pathInfo Path of requested resource.
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processRequest(String pathInfo,
+	private boolean processRequest(String pathInfo,
 		HttpServletResponse response) throws IOException
 	{
 		String[] p = splitRequestPath(pathInfo);
@@ -250,7 +250,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param year String year (4 digits, yyyy).
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processDateRequest(String district, String year,
+	private boolean processDateRequest(String district, String year,
 		HttpServletResponse response) throws IOException
 	{
 		if(isValidYear(year)) {
@@ -265,7 +265,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Write out the dates available for the given directory.
 	 * @param path Path to year archive.
 	 * @param response Servlet response. */
-	protected void writeDates(File path, HttpServletResponse response)
+	private void writeDates(File path, HttpServletResponse response)
 		throws IOException
 	{
 		Writer w = createWriter(response);
@@ -285,7 +285,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Create a buffered writer for the response.
 	 * @param response Servlet response.
 	 * @return Buffered writer for the response. */
-	static protected Writer createWriter(HttpServletResponse response)
+	static private Writer createWriter(HttpServletResponse response)
 		throws IOException
 	{
 		OutputStream os = response.getOutputStream();
@@ -297,7 +297,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param path Path to year archive.
 	 * @param name Name of file in archive.
 	 * @return Date represented by file, or null */
-	static protected String getTrafficDate(File path, String name) {
+	static private String getTrafficDate(File path, String name) {
 		if(name.length() < 8)
 			return null;
 		String date = name.substring(0, 8);
@@ -319,7 +319,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processSensorRequest(String district, String year,
+	private boolean processSensorRequest(String district, String year,
 		String date, HttpServletResponse response) throws IOException
 	{
 		if(isValidYearDate(year, date)) {
@@ -350,7 +350,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @return A set of sensor IDs available for the date. */
-	protected Set<String> lookupSensors(String district, String date)
+	private Set<String> lookupSensors(String district, String date)
 		throws IOException
 	{
 		TreeSet<String> sensors = new TreeSet<String>();
@@ -378,7 +378,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Get the sensor ID for a given file name.
 	 * @param name Sample file name.
 	 * @return Sensor ID. */
-	static protected String getSensorId(String name) {
+	static private String getSensorId(String name) {
 		int i = name.indexOf('.');
 		if(i > 0)
 			return name.substring(0, i);
@@ -393,7 +393,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param name Sample file name.
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processSampleRequest(String district, String year,
+	private boolean processSampleRequest(String district, String year,
 		String date, String name, HttpServletResponse response)
 		throws IOException
 	{
@@ -417,7 +417,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param name Sample file name.
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processSampleRequest(String district, String date,
+	private boolean processSampleRequest(String district, String date,
 		String name, HttpServletResponse response) throws IOException
 	{
 		if(isJsonFile(name))
@@ -442,7 +442,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param name Sample file name.
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	protected boolean processJsonRequest(String district, String date,
+	private boolean processJsonRequest(String district, String date,
 		String name, HttpServletResponse response) throws IOException
 	{
 		name = name.substring(0, name.length() - 5);
@@ -466,7 +466,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream getTrafficInputStream(String district,
+	static private InputStream getTrafficInputStream(String district,
 		String date, String name) throws IOException
 	{
 		try {
@@ -488,7 +488,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Name of sample file within .traffic file.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream getZipInputStream(String district,
+	static private InputStream getZipInputStream(String district,
 		String date, String name) throws IOException
 	{
 		File traffic = getTrafficPath(district, date);
@@ -509,7 +509,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream getFileInputStream(String district,
+	static private InputStream getFileInputStream(String district,
 		String date, String name) throws IOException
 	{
 		return new FileInputStream(new File(getDatePath(district, date),
@@ -521,7 +521,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
 	 * @return InputStream from which sample data can be read. */
-	static protected InputStream getBinnedVLogInputStream(String district,
+	static private InputStream getBinnedVLogInputStream(String district,
 		String date, String name) throws IOException
 	{
 		SampleBin bin = createSampleBin(name);
@@ -538,7 +538,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Create a sample bin for the given file name.
 	 * @param name Name of sample file.
 	 * @return Sample bin for specified file. */
-	static protected SampleBin createSampleBin(String name) {
+	static private SampleBin createSampleBin(String name) {
 		if(name.endsWith(".v30"))
 			return new VolumeSampleBin();
 		else if(name.endsWith(".s30"))
@@ -550,7 +550,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Create and process a vehicle event log.
 	 * @param in InputStream to read .vlog events.
 	 * @return Vehicle event log object. */
-	static protected VehicleEventLog createVLog(InputStream in)
+	static private VehicleEventLog createVLog(InputStream in)
 		throws IOException
 	{
 		try {
@@ -570,14 +570,14 @@ public class TrafdatServlet extends HttpServlet {
 	/** Get the file name with .vlog extension.
 	 * @param name Sample file name.
 	 * @return Name of corresponding .vlog sample file. */
-	static protected String getVLogName(String name) {
+	static private String getVLogName(String name) {
 		return name.substring(0, name.length() - 3) + "vlog";
 	}
 
 	/** Send data from the given input stream to the response.
 	 * @param in Input stream to read data from.
 	 * @param response Servlet response object. */
-	static protected void sendData(InputStream in,
+	static private void sendData(InputStream in,
 		HttpServletResponse response) throws IOException
 	{
 		byte[] buf = new byte[4096];
@@ -597,19 +597,19 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Interface for sample data readers */
-	static protected interface SampleReader {
+	static private interface SampleReader {
 		int getSample(DataInputStream dis) throws IOException;
 	}
 
 	/** Class to read byte samples from a data input stream */
-	static protected class ByteSampleReader implements SampleReader {
+	static private class ByteSampleReader implements SampleReader {
 		public int getSample(DataInputStream dis) throws IOException {
 			return dis.readByte();
 		}
 	}
 
 	/** Class to read short samples from a data input stream */
-	static protected class ShortSampleReader implements SampleReader {
+	static private class ShortSampleReader implements SampleReader {
 		public int getSample(DataInputStream dis) throws IOException {
 			return dis.readShort();
 		}
@@ -618,7 +618,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Send data from the given input stream to the response as JSON.
 	 * @param in Input stream to read data from.
 	 * @param response Servlet response object. */
-	static protected void sendJsonData(InputStream in,
+	static private void sendJsonData(InputStream in,
 		HttpServletResponse response, SampleReader sr)
 		throws IOException
 	{
@@ -653,7 +653,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Format a number as a JSON value.
 	 * @param val Number to format.
 	 * @return JSON value. */
-	static protected String formatJson(int val) {
+	static private String formatJson(int val) {
 		if(val >= 0)
 			return Integer.toString(val);
 		else
