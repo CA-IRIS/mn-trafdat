@@ -29,9 +29,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.Enumeration;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -322,15 +320,16 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processSensorRequest(String district, String year,
 		String date, HttpServletResponse response) throws IOException
 	{
-		if(isValidYearDate(year, date)) {
-			Set<String> sensors = lookupSensors(district, date);
+		if (isValidYearDate(year, date)) {
+			TrafficArchive ta = new TrafficArchive(BASE_PATH);
+			Set<String> sensors = ta.lookup(district, date);
 			response.setContentType("application/json");
 			Writer w = createWriter(response);
 			try {
 				w.write('[');
 				boolean first = true;
-				for(String s: sensors) {
-					if(!first)
+				for (String s: sensors) {
+					if (!first)
 						w.write(',');
 					w.write('"' + s + '"');
 					first = false;
@@ -344,46 +343,6 @@ public class TrafdatServlet extends HttpServlet {
 			return true;
 		} else
 			return false;
-	}
-
-	/** Lookup the sensors available for the given date.
-	 * @param district District ID.
-	 * @param date String date (8 digits yyyyMMdd).
-	 * @return A set of sensor IDs available for the date. */
-	private Set<String> lookupSensors(String district, String date)
-		throws IOException
-	{
-		TreeSet<String> sensors = new TreeSet<String>();
-		File traffic = getTrafficPath(district, date);
-		if(traffic.canRead() && traffic.isFile()) {
-			ZipFile zf = new ZipFile(traffic);
-			Enumeration e = zf.entries();
-			while(e.hasMoreElements()) {
-				ZipEntry ze = (ZipEntry)e.nextElement();
-				String name = ze.getName();
-				if(isValidSampleFile(name))
-					sensors.add(getSensorId(name));
-			}
-		}
-		File dir = getDatePath(district, date);
-		if(dir.canRead() && dir.isDirectory()) {
-			for(String name: dir.list()) {
-				if(isValidSampleFile(name))
-					sensors.add(getSensorId(name));
-			}
-		}
-		return sensors;
-	}
-
-	/** Get the sensor ID for a given file name.
-	 * @param name Sample file name.
-	 * @return Sensor ID. */
-	static private String getSensorId(String name) {
-		int i = name.indexOf('.');
-		if(i > 0)
-			return name.substring(0, i);
-		else
-			return name;
 	}
 
 	/** Process a sample data request.
