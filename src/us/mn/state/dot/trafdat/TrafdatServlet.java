@@ -14,10 +14,7 @@
  */
 package us.mn.state.dot.trafdat;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -25,6 +22,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Iterator;
 import java.util.Set;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -155,16 +153,6 @@ public class TrafdatServlet extends HttpServlet {
 		       name.endsWith(".s30") ||
 		       name.endsWith(".pr60") ||
 		       name.endsWith(".pt60");
-	}
-
-	/** Get a sample reader for the specified sample file name.
-	 * @param name Name of sample file.
-	 * @return SampleReader to read samples from the file. */
-	static private SampleReader getSampleReader(String name) {
-		if(name.endsWith(".c30") || name.endsWith(".pr60"))
-			return new ShortSampleReader();
-		else
-			return new ByteSampleReader();
 	}
 
 	/** Initialize the servlet */
@@ -385,15 +373,9 @@ public class TrafdatServlet extends HttpServlet {
 		if (isBinnedFile(name)) {
 			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
-			InputStream in = sa.sampleInputStream(date, name);
-			try {
-				sendJsonData(in, response,
-					getSampleReader(name));
-				return true;
-			}
-			finally {
-				in.close();
-			}
+			Iterator<String> it = sa.sampleIterator(date, name);
+			sendJsonData(response, it);
+			return true;
 		} else
 			return false;
 	}
@@ -420,51 +402,23 @@ public class TrafdatServlet extends HttpServlet {
 		}
 	}
 
-	/** Interface for sample data readers */
-	static private interface SampleReader {
-		int getSample(DataInputStream dis) throws IOException;
-	}
-
-	/** Class to read byte samples from a data input stream */
-	static private class ByteSampleReader implements SampleReader {
-		public int getSample(DataInputStream dis) throws IOException {
-			return dis.readByte();
-		}
-	}
-
-	/** Class to read short samples from a data input stream */
-	static private class ShortSampleReader implements SampleReader {
-		public int getSample(DataInputStream dis) throws IOException {
-			return dis.readShort();
-		}
-	}
-
 	/** Send data from the given input stream to the response as JSON.
 	 * @param in Input stream to read data from.
 	 * @param response Servlet response object. */
-	static private void sendJsonData(InputStream in,
-		HttpServletResponse response, SampleReader sr)
-		throws IOException
+	static private void sendJsonData(HttpServletResponse response,
+		Iterator<String> it) throws IOException
 	{
-		BufferedInputStream bis = new BufferedInputStream(in);
-		DataInputStream dis = new DataInputStream(bis);
 		response.setContentType("application/json");
 		Writer w = createWriter(response);
 		try {
 			w.write('[');
 			boolean first = true;
-			while(true) {
-				try {
-					String sam = formatJson(
-						sr.getSample(dis));
-					if(!first)
-						w.write(',');
-					w.write(sam);
-					first = false;
-				}
-				catch(EOFException e) {
-					break;
-				}
+			while (it.hasNext()) {
+				String sam = formatJson(it.next());
+				if (!first)
+					w.write(',');
+				w.write(sam);
+				first = false;
 			}
 			w.write(']');
 			w.flush();
@@ -475,12 +429,9 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Format a number as a JSON value.
-	 * @param val Number to format.
+	 * @param val Value to format.
 	 * @return JSON value. */
-	static private String formatJson(int val) {
-		if(val >= 0)
-			return Integer.toString(val);
-		else
-			return "null";
+	static private String formatJson(String val) {
+		return (val != null) ? val : "null";
 	}
 }

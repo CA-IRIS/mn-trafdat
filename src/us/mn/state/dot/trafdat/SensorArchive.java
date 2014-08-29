@@ -14,15 +14,20 @@
  */
 package us.mn.state.dot.trafdat;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.ZipEntry;
@@ -82,6 +87,13 @@ public class SensorArchive {
 	 * @return Name of corresponding .vlog sample file. */
 	static private String getVLogName(String name) {
 		return name.substring(0, name.length() - 3) + "vlog";
+	}
+
+	/** Format a number as a string value.
+	 * @param val Number to format.
+	 * @return String value. */
+	static private String formatInt(int val) {
+		return (val >= 0) ? Integer.toString(val) : null;
 	}
 
 	/** Base sensor data path */
@@ -245,6 +257,63 @@ public class SensorArchive {
 		}
 		finally {
 			in.close();
+		}
+	}
+
+	/** Get a sample Iterator for the given date and sample file.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @return Iterator of all samples. */
+	public Iterator<String> sampleIterator(String date, String name)
+		throws IOException
+	{
+		InputStream in = sampleInputStream(date, name);
+		try {
+			BufferedInputStream bis = new BufferedInputStream(in);
+			DataInputStream dis = new DataInputStream(bis);
+			SampleReader sr = sampleReader(name);
+			ArrayList<String> al = new ArrayList<String>(2880);
+			while (true) {
+				try {
+					al.add(formatInt(sr.getSample(dis)));
+				}
+				catch (EOFException e) {
+					break;
+				}
+			}
+			return al.iterator();
+		}
+		finally {
+			in.close();
+		}
+	}
+
+	/** Get a sample reader for the specified sample file name.
+	 * @param name Name of sample file.
+	 * @return SampleReader to read samples from the file. */
+	static private SampleReader sampleReader(String name) {
+		if (name.endsWith(".c30") || name.endsWith(".pr60"))
+			return new ShortSampleReader();
+		else
+			return new ByteSampleReader();
+	}
+
+	/** Interface for sample data readers */
+	static private interface SampleReader {
+		int getSample(DataInputStream dis) throws IOException;
+	}
+
+	/** Class to read byte samples from a data input stream */
+	static private class ByteSampleReader implements SampleReader {
+		public int getSample(DataInputStream dis) throws IOException {
+			return dis.readByte();
+		}
+	}
+
+	/** Class to read short samples from a data input stream */
+	static private class ShortSampleReader implements SampleReader {
+		public int getSample(DataInputStream dis) throws IOException {
+			return dis.readShort();
 		}
 	}
 }
