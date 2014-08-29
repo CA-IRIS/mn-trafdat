@@ -15,7 +15,6 @@
 package us.mn.state.dot.trafdat;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,15 +45,6 @@ public class TrafdatServlet extends HttpServlet {
 	/** Default district ID */
 	static private final String DEFAULT_DISTRICT = "tms";
 
-	/** Get the file path to the given archive path.
-	 * @param district District ID.
-	 * @param path Archive relative path to file.
-	 * @return Path to directory in sample archive. */
-	static private File getFilePath(String district, String path) {
-		return new File(BASE_PATH + File.separator + district +
-			File.separator + path);
-	}
-
 	/** Split a request path into component parts.
 	 * @param path Request path
 	 * @return Array of path components. */
@@ -62,7 +52,7 @@ public class TrafdatServlet extends HttpServlet {
 		String[] p = splitPath(path);
 		// Backward compatibility stuff:
 		//    check if district path was omitted
-		if (p.length > 0 && isValidYear(p[0])) {
+		if (p.length > 0 && SensorArchive.isValidYear(p[0])) {
 			if (path.startsWith("/"))
 				return splitPath(DEFAULT_DISTRICT + path);
 			else
@@ -81,42 +71,6 @@ public class TrafdatServlet extends HttpServlet {
 			return path.split("/");
 		}
 		return new String[0];
-	}
-
-	/** Check if the given year is valid.
-	 * @param year String year (4 digits, yyyy).
-	 * @return true if year is valid, otherwise false */
-	static private boolean isValidYear(String year) {
-		try {
-			Integer.parseInt(year);
-			return year.length() == 4;
-		}
-		catch (NumberFormatException e) {
-			return false;
-		}
-	}
-
-	/** Check if the given date is valid.
-	 * @param date String date (8 digits yyyyMMdd)
-	 * @return true if date is valid, otherwise false */
-	static private boolean isValidDate(String date) {
-		try {
-			Integer.parseInt(date);
-			return date.length() == 8;
-		}
-		catch (NumberFormatException e) {
-			return false;
-		}
-	}
-
-	/** Check if the given year and date is valid.
-	 * @param year String year (4 digits, yyyy).
-	 * @param date String date (8 digits yyyyMMdd)
-	 * @return true if date is valid, otherwise false */
-	static private boolean isValidYearDate(String year, String date) {
-		return isValidYear(year) &&
-		       isValidDate(date) &&
-		       date.startsWith(year);
 	}
 
 	/** Check if the given file name is valid.
@@ -198,35 +152,13 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processDateRequest(String district, String year,
 		HttpServletResponse response) throws IOException
 	{
-		if (isValidYear(year)) {
-			File f = getFilePath(district, year);
-			if (f.canRead() && f.isDirectory())
-				writeDates(f, response);
+		if (SensorArchive.isValidYear(year)) {
+			SensorArchive sa = new SensorArchive(BASE_PATH,
+				district);
+			sendTextData(response, sa.lookupDates(year));
 			return true;
 		} else
 			return false;
-	}
-
-	/** Write out the dates available for the given directory.
-	 * @param path Path to year archive.
-	 * @param response Servlet response. */
-	private void writeDates(File path, HttpServletResponse response)
-		throws IOException
-	{
-		Writer w = createWriter(response);
-		try {
-			for (String name: path.list()) {
-				if (SensorArchive.isDateReadable(path, name)) {
-					String date = parseDate(name);
-					if (date != null)
-						w.write(date + "\n");
-				}
-			}
-			w.flush();
-		}
-		finally {
-			w.close();
-		}
 	}
 
 	/** Create a buffered writer for the response.
@@ -240,18 +172,6 @@ public class TrafdatServlet extends HttpServlet {
 		return new BufferedWriter(osw);
 	}
 
-	/** Parse the date string for the given file.
-	 * @param name Name of file in archive.
-	 * @return Date represented by file, or null */
-	static private String parseDate(String name) {
-		if (name.length() >= 8) {
-			String date = name.substring(0, 8);
-			if (isValidDate(date))
-				return date;
-		}
-		return null;
-	}
-
 	/** Process a sensor list request.
 	 * @param district District ID.
 	 * @param year String year (4 digits, yyyy).
@@ -261,7 +181,7 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processSensorRequest(String district, String year,
 		String date, HttpServletResponse response) throws IOException
 	{
-		if (isValidYearDate(year, date)) {
+		if (SensorArchive.isValidYearDate(year, date)) {
 			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
 			sendJsonData(response, sa.lookup(date));
@@ -281,7 +201,9 @@ public class TrafdatServlet extends HttpServlet {
 		String date, String name, HttpServletResponse response)
 		throws IOException
 	{
-		if (isValidYearDate(year, date) && isFileNameValid(name)) {
+		if (SensorArchive.isValidYearDate(year, date) &&
+		    isFileNameValid(name))
+		{
 			try {
 				return processSampleRequest(district, date,
 					name, response);
@@ -359,6 +281,25 @@ public class TrafdatServlet extends HttpServlet {
 		}
 		finally {
 			out.close();
+		}
+	}
+
+	/** Send text data from the given iterator to the response.
+	 * @param response Servlet response object.
+	 * @param it Iterator of values to send. */
+	static private void sendTextData(HttpServletResponse response,
+		Iterator<String> it) throws IOException
+	{
+		Writer w = createWriter(response);
+		try {
+			while (it.hasNext()) {
+				String val = it.next();
+				w.write(val + "\n");
+			}
+			w.flush();
+		}
+		finally {
+			w.close();
 		}
 	}
 

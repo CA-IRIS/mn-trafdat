@@ -47,7 +47,7 @@ public class SensorArchive {
 	 * @param path Path to year archive.
 	 * @param name Name of file in archive.
 	 * @return true if file is readable, otherwise false. */
-	static public boolean isDateReadable(File path, String name) {
+	static private boolean isDateReadable(File path, String name) {
 		File file = new File(path, name);
 		return file.canRead() &&
 		      (isTrafficFile(name) || isDateDirectory(file, name));
@@ -61,6 +61,54 @@ public class SensorArchive {
 	/** Check if a date directory exists */
 	static private boolean isDateDirectory(File file, String name) {
 		return (name.length() == 8) && file.isDirectory();
+	}
+
+	/** Parse the date string for the given file.
+	 * @param name Name of file in archive.
+	 * @return Date represented by file, or null */
+	static private String parseDate(String name) {
+		if (name.length() >= 8) {
+			String date = name.substring(0, 8);
+			if (isValidDate(date))
+				return date;
+		}
+		return null;
+	}
+
+	/** Check if the given year is valid.
+	 * @param year String year (4 digits, yyyy).
+	 * @return true if year is valid, otherwise false */
+	static public boolean isValidYear(String year) {
+		try {
+			Integer.parseInt(year);
+			return year.length() == 4;
+		}
+		catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
+	/** Check if the given date is valid.
+	 * @param date String date (8 digits yyyyMMdd)
+	 * @return true if date is valid, otherwise false */
+	static private boolean isValidDate(String date) {
+		try {
+			Integer.parseInt(date);
+			return date.length() == 8;
+		}
+		catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
+	/** Check if the given year and date is valid.
+	 * @param year String year (4 digits, yyyy).
+	 * @param date String date (8 digits yyyyMMdd)
+	 * @return true if date is valid, otherwise false */
+	static public boolean isValidYearDate(String year, String date) {
+		return isValidYear(year) &&
+		       isValidDate(date) &&
+		       date.startsWith(year);
 	}
 
 	/** Get the sensor ID for a given file name.
@@ -148,6 +196,25 @@ public class SensorArchive {
 	 * @param d District ID. */
 	public SensorArchive(String p, String d) {
 		base_path = new File(p, d);
+	}
+
+	/** Lookup the dates available for a given year.
+	 * @param year String year (4 digits).
+	 * @return Iterator of dates available (8 digits yyyyMMdd). */
+	public Iterator<String> lookupDates(String year) throws IOException {
+		assert year.length() == 4;
+		TreeSet<String> dates = new TreeSet<String>();
+		File dir = getFilePath(year);
+		if (dir.canRead() && dir.isDirectory()) {
+			for (String name: dir.list()) {
+				if (isDateReadable(dir, name)) {
+					String date = parseDate(name);
+					if (date != null)
+						dates.add(date);
+				}
+			}
+		}
+		return dates.iterator();
 	}
 
 	/** Lookup the sensors available for the given date.
