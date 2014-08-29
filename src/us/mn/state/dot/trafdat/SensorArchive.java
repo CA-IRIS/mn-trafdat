@@ -114,14 +114,6 @@ public class SensorArchive {
 		       date.startsWith(year);
 	}
 
-	/** Get the sensor ID for a given file name.
-	 * @param name Sample file name.
-	 * @return Sensor ID. */
-	static private String sensor_id(String name) {
-		int i = name.indexOf('.');
-		return (i > 0) ? name.substring(0, i) : name;
-	}
-
 	/** Check if the given sample file name is valid.
 	 * @param name Name of sample file.
 	 * @return true if name is valid, otherwise false */
@@ -152,6 +144,14 @@ public class SensorArchive {
 			return null;
 	}
 
+	/** Get the sensor ID for a given file name.
+	 * @param name Sample file name.
+	 * @return Sensor ID. */
+	static private String sensor_id(String name) {
+		int i = name.indexOf('.');
+		return (i > 0) ? name.substring(0, i) : name;
+	}
+
 	/** Get the file name with .vlog extension.
 	 * @param name Sample file name.
 	 * @return Name of corresponding .vlog sample file. */
@@ -164,6 +164,35 @@ public class SensorArchive {
 	 * @return String value. */
 	static private String formatInt(int val) {
 		return (val >= 0) ? Integer.toString(val) : null;
+	}
+
+	/** Get a sample reader for the specified sample file name.
+	 * @param name Name of sample file.
+	 * @return SampleReader to read samples from the file. */
+	static private SampleReader sampleReader(String name) {
+		if (name.endsWith(".c30") || name.endsWith(".pr60"))
+			return new ShortSampleReader();
+		else
+			return new ByteSampleReader();
+	}
+
+	/** Interface for sample data readers */
+	static private interface SampleReader {
+		int getSample(DataInputStream dis) throws IOException;
+	}
+
+	/** Class to read byte samples from a data input stream */
+	static private class ByteSampleReader implements SampleReader {
+		public int getSample(DataInputStream dis) throws IOException {
+			return dis.readByte();
+		}
+	}
+
+	/** Class to read short samples from a data input stream */
+	static private class ShortSampleReader implements SampleReader {
+		public int getSample(DataInputStream dis) throws IOException {
+			return dis.readShort();
+		}
 	}
 
 	/** Data path for district */
@@ -373,35 +402,6 @@ public class SensorArchive {
 		}
 		finally {
 			in.close();
-		}
-	}
-
-	/** Get a sample reader for the specified sample file name.
-	 * @param name Name of sample file.
-	 * @return SampleReader to read samples from the file. */
-	static private SampleReader sampleReader(String name) {
-		if (name.endsWith(".c30") || name.endsWith(".pr60"))
-			return new ShortSampleReader();
-		else
-			return new ByteSampleReader();
-	}
-
-	/** Interface for sample data readers */
-	static private interface SampleReader {
-		int getSample(DataInputStream dis) throws IOException;
-	}
-
-	/** Class to read byte samples from a data input stream */
-	static private class ByteSampleReader implements SampleReader {
-		public int getSample(DataInputStream dis) throws IOException {
-			return dis.readByte();
-		}
-	}
-
-	/** Class to read short samples from a data input stream */
-	static private class ShortSampleReader implements SampleReader {
-		public int getSample(DataInputStream dis) throws IOException {
-			return dis.readShort();
 		}
 	}
 }
