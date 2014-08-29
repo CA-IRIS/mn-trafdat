@@ -321,8 +321,9 @@ public class TrafdatServlet extends HttpServlet {
 		String date, HttpServletResponse response) throws IOException
 	{
 		if (isValidYearDate(year, date)) {
-			TrafficArchive ta = new TrafficArchive(BASE_PATH);
-			Set<String> sensors = ta.lookup(district, date);
+			TrafficArchive ta = new TrafficArchive(BASE_PATH,
+				district);
+			Set<String> sensors = ta.lookup(date);
 			response.setContentType("application/json");
 			Writer w = createWriter(response);
 			try {

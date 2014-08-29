@@ -24,7 +24,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 /**
- * Traffic data archive.
+ * Sensor data archive.
  *
  * @author Douglas Lau
  */
@@ -59,55 +59,51 @@ public class TrafficArchive {
 		       name.endsWith(".pt60");
 	}
 
-	/** Base archive path */
-	private final String base_path;
+	/** Base sensor data path */
+	private final File base_path;
 
 	/** Get the file path to the given archive path.
-	 * @param district District ID.
 	 * @param path Archive relative path to file.
 	 * @return Path to directory in sample archive. */
-	private File getFilePath(String district, String path) {
-		return new File(base_path + File.separator + district +
-			File.separator + path);
+	private File getFilePath(String path) {
+		return new File(base_path, path);
 	}
 
 	/** Get the file path to the given date.
-	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @return Path to file in sample archive. */
-	private File getDatePath(String district, String date) {
+	private File getDatePath(String date) {
+		assert date.length() == 8;
 		String year = date.substring(0, 4);
-		return getFilePath(district, year + File.separator + date);
+		return new File(getFilePath(year), date);
 	}
 
 	/** Get the file path to the given date traffic file.
-	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @return Path to file in sample archive. */
-	private File getTrafficPath(String district, String date) {
+	private File getTrafficPath(String date) {
+		assert date.length() == 8;
 		String year = date.substring(0, 4);
-		return getFilePath(district, year + File.separator + date +EXT);
+		return new File(getFilePath(year), date + EXT);
 	}
 
 	/** Process a sensor list request.
-	 * @param path Location of sensor data. */
-	public TrafficArchive(String p) {
-		base_path = p;
+	 * @param p Base path to sensor data.
+	 * @param d District ID. */
+	public TrafficArchive(String p, String d) {
+		base_path = new File(p, d);
 	}
 
 	/** Lookup the sensors available for the given date.
-	 * @param district District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @return A set of sensor IDs available for the date. */
-	public Set<String> lookup(String district, String date)
-		throws IOException
-	{
+	public Set<String> lookup(String date) throws IOException {
 		assert date.length() == 8;
 		TreeSet<String> sensors = new TreeSet<String>();
-		File traffic = getTrafficPath(district, date);
+		File traffic = getTrafficPath(date);
 		if (traffic.canRead() && traffic.isFile())
 			lookup(traffic, sensors);
-		File dir = getDatePath(district, date);
+		File dir = getDatePath(date);
 		if (dir.canRead() && dir.isDirectory()) {
 			for (String name: dir.list()) {
 				if (isValidSampleFile(name))
