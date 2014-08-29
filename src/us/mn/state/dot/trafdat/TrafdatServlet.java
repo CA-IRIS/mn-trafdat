@@ -332,7 +332,7 @@ public class TrafdatServlet extends HttpServlet {
 				district);
 			InputStream in = sa.sampleInputStream(date, name);
 			try {
-				sendData(in, response);
+				sendRawData(response, in);
 				return true;
 			}
 			finally {
@@ -361,19 +361,19 @@ public class TrafdatServlet extends HttpServlet {
 			return false;
 	}
 
-	/** Send data from the given input stream to the response.
-	 * @param in Input stream to read data from.
-	 * @param response Servlet response object. */
-	static private void sendData(InputStream in,
-		HttpServletResponse response) throws IOException
+	/** Send raw data from the given input stream to the response.
+	 * @param response Servlet response object.
+	 * @param in Input stream to read data from. */
+	static private void sendRawData(HttpServletResponse response,
+		InputStream in) throws IOException
 	{
 		byte[] buf = new byte[4096];
 		response.setContentType("application/octet-stream");
 		OutputStream out = response.getOutputStream();
 		try {
-			while(true) {
+			while (true) {
 				int n_bytes = in.read(buf);
-				if(n_bytes < 0)
+				if (n_bytes < 0)
 					break;
 				out.write(buf, 0, n_bytes);
 			}
