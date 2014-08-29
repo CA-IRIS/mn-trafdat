@@ -40,9 +40,6 @@ public class TrafdatServlet extends HttpServlet {
 	/** Maximum length of a data filename */
 	static private final int MAX_FILENAME_LENGTH = 24;
 
-	/** Traffic file extension */
-	static private final String EXT = ".traffic";
-
 	/** Path to directory containing traffic data files */
 	static private final String BASE_PATH = "/var/lib/iris/traffic";
 
@@ -219,9 +216,11 @@ public class TrafdatServlet extends HttpServlet {
 		Writer w = createWriter(response);
 		try {
 			for (String name: path.list()) {
-				String date = getTrafficDate(path, name);
-				if (date != null)
-					w.write(date + "\n");
+				if (SensorArchive.isDateReadable(path, name)) {
+					String date = parseDate(name);
+					if (date != null)
+						w.write(date + "\n");
+				}
 			}
 			w.flush();
 		}
@@ -241,23 +240,15 @@ public class TrafdatServlet extends HttpServlet {
 		return new BufferedWriter(osw);
 	}
 
-	/** Get the date string for the given file.
-	 * @param path Path to year archive.
+	/** Parse the date string for the given file.
 	 * @param name Name of file in archive.
 	 * @return Date represented by file, or null */
-	static private String getTrafficDate(File path, String name) {
-		if (name.length() < 8)
-			return null;
-		String date = name.substring(0, 8);
-		if (!isValidDate(date))
-			return null;
-		File file = new File(path, name);
-		if (!file.canRead())
-			return null;
-		if (name.length() == 8 && file.isDirectory())
-			return date;
-		if (name.length() == 16 && name.endsWith(EXT))
-			return date;
+	static private String parseDate(String name) {
+		if (name.length() >= 8) {
+			String date = name.substring(0, 8);
+			if (isValidDate(date))
+				return date;
+		}
 		return null;
 	}
 

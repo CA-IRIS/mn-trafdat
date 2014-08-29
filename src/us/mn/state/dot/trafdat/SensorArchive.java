@@ -43,6 +43,26 @@ public class SensorArchive {
 	/** Traffic file extension */
 	static private final String EXT = ".traffic";
 
+	/** Check if sensor data exists for a given date.
+	 * @param path Path to year archive.
+	 * @param name Name of file in archive.
+	 * @return true if file is readable, otherwise false. */
+	static public boolean isDateReadable(File path, String name) {
+		File file = new File(path, name);
+		return file.canRead() &&
+		      (isTrafficFile(name) || isDateDirectory(file, name));
+	}
+
+	/** Check if a name is a valid .traffic file */
+	static private boolean isTrafficFile(String name) {
+		return (name.length() == 16) && name.endsWith(EXT);
+	}
+
+	/** Check if a date directory exists */
+	static private boolean isDateDirectory(File file, String name) {
+		return (name.length() == 8) && file.isDirectory();
+	}
+
 	/** Get the sensor ID for a given file name.
 	 * @param name Sample file name.
 	 * @return Sensor ID. */
