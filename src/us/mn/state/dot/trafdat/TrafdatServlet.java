@@ -101,6 +101,80 @@ public class TrafdatServlet extends HttpServlet {
 		return new BufferedWriter(osw);
 	}
 
+	/** Send raw data from the given input stream to the response.
+	 * @param response Servlet response object.
+	 * @param in Input stream to read data from. */
+	static private void sendRawData(HttpServletResponse response,
+		InputStream in) throws IOException
+	{
+		byte[] buf = new byte[4096];
+		response.setContentType("application/octet-stream");
+		OutputStream out = response.getOutputStream();
+		try {
+			while (true) {
+				int n_bytes = in.read(buf);
+				if (n_bytes < 0)
+					break;
+				out.write(buf, 0, n_bytes);
+			}
+		}
+		finally {
+			out.close();
+		}
+	}
+
+	/** Send text data from the given iterator to the response.
+	 * @param response Servlet response object.
+	 * @param it Iterator of values to send. */
+	static private void sendTextData(HttpServletResponse response,
+		Iterator<String> it) throws IOException
+	{
+		Writer w = createWriter(response);
+		try {
+			while (it.hasNext()) {
+				String val = it.next();
+				w.write(val + "\n");
+			}
+			w.flush();
+		}
+		finally {
+			w.close();
+		}
+	}
+
+	/** Send data from the given iterator to the response as JSON.
+	 * @param response Servlet response object.
+	 * @param it Iterator of values to send. */
+	static private void sendJsonData(HttpServletResponse response,
+		Iterator<String> it) throws IOException
+	{
+		response.setContentType("application/json");
+		Writer w = createWriter(response);
+		try {
+			w.write('[');
+			boolean first = true;
+			while (it.hasNext()) {
+				String val = formatJson(it.next());
+				if (!first)
+					w.write(',');
+				w.write(val);
+				first = false;
+			}
+			w.write(']');
+			w.flush();
+		}
+		finally {
+			w.close();
+		}
+	}
+
+	/** Format a number as a JSON value.
+	 * @param val Value to format.
+	 * @return JSON value. */
+	static private String formatJson(String val) {
+		return (val != null) ? val : "null";
+	}
+
 	/** Initialize the servlet */
 	@Override
 	public void init(ServletConfig config) throws ServletException {
@@ -273,79 +347,5 @@ public class TrafdatServlet extends HttpServlet {
 			return true;
 		} else
 			return false;
-	}
-
-	/** Send raw data from the given input stream to the response.
-	 * @param response Servlet response object.
-	 * @param in Input stream to read data from. */
-	static private void sendRawData(HttpServletResponse response,
-		InputStream in) throws IOException
-	{
-		byte[] buf = new byte[4096];
-		response.setContentType("application/octet-stream");
-		OutputStream out = response.getOutputStream();
-		try {
-			while (true) {
-				int n_bytes = in.read(buf);
-				if (n_bytes < 0)
-					break;
-				out.write(buf, 0, n_bytes);
-			}
-		}
-		finally {
-			out.close();
-		}
-	}
-
-	/** Send text data from the given iterator to the response.
-	 * @param response Servlet response object.
-	 * @param it Iterator of values to send. */
-	static private void sendTextData(HttpServletResponse response,
-		Iterator<String> it) throws IOException
-	{
-		Writer w = createWriter(response);
-		try {
-			while (it.hasNext()) {
-				String val = it.next();
-				w.write(val + "\n");
-			}
-			w.flush();
-		}
-		finally {
-			w.close();
-		}
-	}
-
-	/** Send data from the given iterator to the response as JSON.
-	 * @param response Servlet response object.
-	 * @param it Iterator of values to send. */
-	static private void sendJsonData(HttpServletResponse response,
-		Iterator<String> it) throws IOException
-	{
-		response.setContentType("application/json");
-		Writer w = createWriter(response);
-		try {
-			w.write('[');
-			boolean first = true;
-			while (it.hasNext()) {
-				String val = formatJson(it.next());
-				if (!first)
-					w.write(',');
-				w.write(val);
-				first = false;
-			}
-			w.write(']');
-			w.flush();
-		}
-		finally {
-			w.close();
-		}
-	}
-
-	/** Format a number as a JSON value.
-	 * @param val Value to format.
-	 * @return JSON value. */
-	static private String formatJson(String val) {
-		return (val != null) ? val : "null";
 	}
 }
