@@ -14,7 +14,13 @@
  */
 package us.mn.state.dot.trafdat;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Set;
@@ -57,6 +63,25 @@ public class TrafficArchive {
 		       name.endsWith(".s30") ||
 		       name.endsWith(".pr60") ||
 		       name.endsWith(".pt60");
+	}
+
+	/** Create a sample bin for the given file name.
+	 * @param name Name of sample file.
+	 * @return Sample bin for specified file. */
+	static private SampleBin createSampleBin(String name) {
+		if (name.endsWith(".v30"))
+			return new VolumeSampleBin();
+		else if (name.endsWith(".s30"))
+			return new SpeedSampleBin();
+		else
+			return null;
+	}
+
+	/** Get the file name with .vlog extension.
+	 * @param name Sample file name.
+	 * @return Name of corresponding .vlog sample file. */
+	static private String getVLogName(String name) {
+		return name.substring(0, name.length() - 3) + "vlog";
 	}
 
 	/** Base sensor data path */
@@ -132,6 +157,94 @@ public class TrafficArchive {
 		}
 		finally {
 			zf.close();
+		}
+	}
+
+	/** Get an InputStream for the given date and sample file.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @return InputStream from which sample data can be read. */
+	public InputStream sampleInputStream(String date, String name)
+		throws IOException
+	{
+		assert date.length() == 8;
+		try {
+			return getZipInputStream(date, name);
+		}
+		catch (FileNotFoundException e) {
+			try {
+				return getFileInputStream(date, name);
+			}
+			catch (FileNotFoundException ee) {
+				return getBinnedVLogInputStream(date, name);
+			}
+		}
+	}
+
+	/** Get a sample InputStream from a zip (traffic) file.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Name of sample file within .traffic file.
+	 * @return InputStream from which sample data can be read. */
+	private InputStream getZipInputStream(String date, String name)
+		throws IOException
+	{
+		File traffic = getTrafficPath(date);
+		try {
+			ZipFile zip = new ZipFile(traffic);
+			ZipEntry entry = zip.getEntry(name);
+			if (entry != null)
+				return zip.getInputStream(entry);
+		}
+		catch (ZipException e) {
+			// Defer to FileNotFoundException, below
+		}
+		throw new FileNotFoundException(name);
+	}
+
+	/** Get a sample input stream from a regular file.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @return InputStream from which sample data can be read. */
+	private InputStream getFileInputStream(String date, String name)
+		throws IOException
+	{
+		return new FileInputStream(new File(getDatePath(date), name));
+	}
+
+	/** Get a sample input stream by binning a .vlog file.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param name Sample file name.
+	 * @return InputStream from which sample data can be read. */
+	private InputStream getBinnedVLogInputStream(String date, String name)
+		throws IOException
+	{
+		assert date.length() == 8;
+		SampleBin bin = createSampleBin(name);
+		if (bin != null) {
+			String n = getVLogName(name);
+			VehicleEventLog log = createVLog(
+				sampleInputStream(date, n));
+			log.bin30SecondSamples(bin);
+			return new ByteArrayInputStream(bin.getData());
+		} else
+			throw new FileNotFoundException(name);
+	}
+
+	/** Create and process a vehicle event log.
+	 * @param in InputStream to read .vlog events.
+	 * @return Vehicle event log object. */
+	private VehicleEventLog createVLog(InputStream in) throws IOException {
+		try {
+			InputStreamReader reader = new InputStreamReader(in);
+			BufferedReader b = new BufferedReader(reader);
+			VehicleEventLog log = new VehicleEventLog(b);
+			log.propogateStampsForward();
+			log.propogateStampsBackward();
+			log.interpolateMissingStamps();
+			return log;
+		}
+		finally {
+			in.close();
 		}
 	}
 }

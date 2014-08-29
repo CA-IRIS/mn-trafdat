@@ -15,24 +15,17 @@
 package us.mn.state.dot.trafdat;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -66,24 +59,6 @@ public class TrafdatServlet extends HttpServlet {
 	static private File getFilePath(String district, String path) {
 		return new File(BASE_PATH + File.separator + district +
 			File.separator + path);
-	}
-
-	/** Get the file path to the given date.
-	 * @param district District ID.
-	 * @param date String date (8 digits yyyyMMdd).
-	 * @return Path to file in sample archive. */
-	static private File getDatePath(String district, String date) {
-		String year = date.substring(0, 4);
-		return getFilePath(district, year + File.separator + date);
-	}
-
-	/** Get the file path to the given date traffic file.
-	 * @param district District ID.
-	 * @param date String date (8 digits yyyyMMdd).
-	 * @return Path to file in sample archive. */
-	static private File getTrafficPath(String district, String date) {
-		String year = date.substring(0, 4);
-		return getFilePath(district, year + File.separator + date +EXT);
 	}
 
 	/** Split a request path into component parts.
@@ -383,8 +358,9 @@ public class TrafdatServlet extends HttpServlet {
 		if(isJsonFile(name))
 			return processJsonRequest(district, date,name,response);
 		else if(isValidSampleFile(name)) {
-			InputStream in = getTrafficInputStream(district, date,
-				name);
+			TrafficArchive ta = new TrafficArchive(BASE_PATH,
+				district);
+			InputStream in = ta.sampleInputStream(date, name);
 			try {
 				sendData(in, response);
 				return true;
@@ -406,9 +382,10 @@ public class TrafdatServlet extends HttpServlet {
 		String name, HttpServletResponse response) throws IOException
 	{
 		name = name.substring(0, name.length() - 5);
-		if(isBinnedFile(name)) {
-			InputStream in = getTrafficInputStream(district, date,
-				name);
+		if (isBinnedFile(name)) {
+			TrafficArchive ta = new TrafficArchive(BASE_PATH,
+				district);
+			InputStream in = ta.sampleInputStream(date, name);
 			try {
 				sendJsonData(in, response,
 					getSampleReader(name));
@@ -419,119 +396,6 @@ public class TrafdatServlet extends HttpServlet {
 			}
 		} else
 			return false;
-	}
-
-	/** Get an InputStream for the given date.
-	 * @param district District ID.
-	 * @param date String date (8 digits yyyyMMdd).
-	 * @param name Sample file name.
-	 * @return InputStream from which sample data can be read. */
-	static private InputStream getTrafficInputStream(String district,
-		String date, String name) throws IOException
-	{
-		try {
-			return getZipInputStream(district, date, name);
-		}
-		catch(FileNotFoundException e) {
-			try {
-				return getFileInputStream(district, date, name);
-			}
-			catch(FileNotFoundException ee) {
-				return getBinnedVLogInputStream(district, date,
-					name);
-			}
-		}
-	}
-
-	/** Get a sample InputStream from a zip (traffic) file.
-	 * @param district District ID.
-	 * @param date String date (8 digits yyyyMMdd).
-	 * @param name Name of sample file within .traffic file.
-	 * @return InputStream from which sample data can be read. */
-	static private InputStream getZipInputStream(String district,
-		String date, String name) throws IOException
-	{
-		File traffic = getTrafficPath(district, date);
-		try {
-			ZipFile zip = new ZipFile(traffic);
-			ZipEntry entry = zip.getEntry(name);
-			if(entry != null)
-				return zip.getInputStream(entry);
-		}
-		catch(ZipException e) {
-			// Defer to FileNotFoundException, below
-		}
-		throw new FileNotFoundException(name);
-	}
-
-	/** Get a sample input stream from a regular file.
-	 * @param district District ID.
-	 * @param date String date (8 digits yyyyMMdd).
-	 * @param name Sample file name.
-	 * @return InputStream from which sample data can be read. */
-	static private InputStream getFileInputStream(String district,
-		String date, String name) throws IOException
-	{
-		return new FileInputStream(new File(getDatePath(district, date),
-			name));
-	}
-
-	/** Get a sample input stream by binning a .vlog file.
-	 * @param district District ID.
-	 * @param date String date (8 digits yyyyMMdd).
-	 * @param name Sample file name.
-	 * @return InputStream from which sample data can be read. */
-	static private InputStream getBinnedVLogInputStream(String district,
-		String date, String name) throws IOException
-	{
-		SampleBin bin = createSampleBin(name);
-		if(bin != null) {
-			String n = getVLogName(name);
-			VehicleEventLog log = createVLog(
-				getTrafficInputStream(district, date, n));
-			log.bin30SecondSamples(bin);
-			return new ByteArrayInputStream(bin.getData());
-		} else
-			throw new FileNotFoundException(name);
-	}
-
-	/** Create a sample bin for the given file name.
-	 * @param name Name of sample file.
-	 * @return Sample bin for specified file. */
-	static private SampleBin createSampleBin(String name) {
-		if(name.endsWith(".v30"))
-			return new VolumeSampleBin();
-		else if(name.endsWith(".s30"))
-			return new SpeedSampleBin();
-		else
-			return null;
-	}
-
-	/** Create and process a vehicle event log.
-	 * @param in InputStream to read .vlog events.
-	 * @return Vehicle event log object. */
-	static private VehicleEventLog createVLog(InputStream in)
-		throws IOException
-	{
-		try {
-			InputStreamReader reader = new InputStreamReader(in);
-			BufferedReader b = new BufferedReader(reader);
-			VehicleEventLog log = new VehicleEventLog(b);
-			log.propogateStampsForward();
-			log.propogateStampsBackward();
-			log.interpolateMissingStamps();
-			return log;
-		}
-		finally {
-			in.close();
-		}
-	}
-
-	/** Get the file name with .vlog extension.
-	 * @param name Sample file name.
-	 * @return Name of corresponding .vlog sample file. */
-	static private String getVLogName(String name) {
-		return name.substring(0, name.length() - 3) + "vlog";
 	}
 
 	/** Send data from the given input stream to the response.
