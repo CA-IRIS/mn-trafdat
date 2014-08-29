@@ -59,29 +59,29 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Split a request path into component parts.
-	 * @param p Request path
+	 * @param path Request path
 	 * @return Array of path components. */
-	static private String[] splitRequestPath(String pathInfo) {
-		String[] p = splitPath(pathInfo);
+	static private String[] splitRequestPath(String path) {
+		String[] p = splitPath(path);
 		// Backward compatibility stuff:
 		//    check if district path was omitted
 		if (p.length > 0 && isValidYear(p[0])) {
-			if (pathInfo.startsWith("/"))
-				return splitPath(DEFAULT_DISTRICT + pathInfo);
+			if (path.startsWith("/"))
+				return splitPath(DEFAULT_DISTRICT + path);
 			else
-				return splitPath(DEFAULT_DISTRICT+"/"+pathInfo);
+				return splitPath(DEFAULT_DISTRICT + "/" + path);
 		} else
 			return p;
 	}
 
 	/** Split a path into component parts.
-	 * @param p Path
+	 * @param path Request path
 	 * @return Array of path components. */
-	static private String[] splitPath(String p) {
-		if (p != null) {
-			while (p.startsWith("/"))
-				p = p.substring(1);
-			return p.split("/");
+	static private String[] splitPath(String path) {
+		if (path != null) {
+			while (path.startsWith("/"))
+				path = path.substring(1);
+			return path.split("/");
 		}
 		return new String[0];
 	}
@@ -165,9 +165,9 @@ public class TrafdatServlet extends HttpServlet {
 	public void doGet(HttpServletRequest request,
 		HttpServletResponse response)
 	{
-		String pathInfo = request.getPathInfo();
+		String path = request.getPathInfo();
 		try {
-			if (!processRequest(pathInfo, response)) {
+			if (!processRequest(path, response)) {
 				response.sendError(
 					HttpServletResponse.SC_BAD_REQUEST);
 			}
@@ -185,13 +185,13 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a traffic data request from a client.
-	 * @param pathInfo Path of requested resource.
+	 * @param path Path of requested resource.
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processRequest(String pathInfo,
+	private boolean processRequest(String path,
 		HttpServletResponse response) throws IOException
 	{
-		String[] p = splitRequestPath(pathInfo);
+		String[] p = splitRequestPath(path);
 		switch (p.length) {
 		case 2:
 			return processDateRequest(p[0], p[1], response);
