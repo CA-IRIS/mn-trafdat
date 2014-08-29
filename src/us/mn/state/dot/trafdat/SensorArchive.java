@@ -54,14 +54,14 @@ public class SensorArchive {
 	/** Check if the given sample file name is valid.
 	 * @param name Name of sample file.
 	 * @return true if name is valid, otherwise false */
-	static private boolean isValidSampleFile(String name) {
+	static public boolean isValidSampleFile(String name) {
 		return isBinnedFile(name) || name.endsWith(".vlog");
 	}
 
 	/** Check if the given file name is a binned sample file.
 	 * @param name Name of sample file.
 	 * @return true if name is for a binned sample file, otherwise false */
-	static private boolean isBinnedFile(String name) {
+	static public boolean isBinnedFile(String name) {
 		return name.endsWith(".v30") ||
 		       name.endsWith(".c30") ||
 		       name.endsWith(".s30") ||

@@ -136,24 +136,6 @@ public class TrafdatServlet extends HttpServlet {
 		return name.endsWith(".json");
 	}
 
-	/** Check if the given sample file name is valid.
-	 * @param name Name of sample file.
-	 * @return true if name is valid, otherwise false */
-	static private boolean isValidSampleFile(String name) {
-		return isBinnedFile(name) || name.endsWith(".vlog");
-	}
-
-	/** Check if the given file name is a binned sample file.
-	 * @param name Name of sample file.
-	 * @return true if name is for a binned sample file, otherwise false */
-	static private boolean isBinnedFile(String name) {
-		return name.endsWith(".v30") ||
-		       name.endsWith(".c30") ||
-		       name.endsWith(".s30") ||
-		       name.endsWith(".pr60") ||
-		       name.endsWith(".pt60");
-	}
-
 	/** Initialize the servlet */
 	@Override
 	public void init(ServletConfig config) throws ServletException {
@@ -327,7 +309,7 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		if (isJsonFile(name))
 			return processJsonRequest(district, date,name,response);
-		else if (isValidSampleFile(name)) {
+		else if (SensorArchive.isValidSampleFile(name)) {
 			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
 			InputStream in = sa.sampleInputStream(date, name);
@@ -352,7 +334,7 @@ public class TrafdatServlet extends HttpServlet {
 		String name, HttpServletResponse response) throws IOException
 	{
 		name = name.substring(0, name.length() - 5);
-		if (isBinnedFile(name)) {
+		if (SensorArchive.isBinnedFile(name)) {
 			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
 			sendJsonData(response, sa.sampleIterator(date, name));
