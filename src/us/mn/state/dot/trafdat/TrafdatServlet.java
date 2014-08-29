@@ -296,9 +296,9 @@ public class TrafdatServlet extends HttpServlet {
 		String date, HttpServletResponse response) throws IOException
 	{
 		if (isValidYearDate(year, date)) {
-			TrafficArchive ta = new TrafficArchive(BASE_PATH,
+			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
-			Set<String> sensors = ta.lookup(date);
+			Set<String> sensors = sa.lookup(date);
 			response.setContentType("application/json");
 			Writer w = createWriter(response);
 			try {
@@ -358,9 +358,9 @@ public class TrafdatServlet extends HttpServlet {
 		if(isJsonFile(name))
 			return processJsonRequest(district, date,name,response);
 		else if(isValidSampleFile(name)) {
-			TrafficArchive ta = new TrafficArchive(BASE_PATH,
+			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
-			InputStream in = ta.sampleInputStream(date, name);
+			InputStream in = sa.sampleInputStream(date, name);
 			try {
 				sendData(in, response);
 				return true;
@@ -383,9 +383,9 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		name = name.substring(0, name.length() - 5);
 		if (isBinnedFile(name)) {
-			TrafficArchive ta = new TrafficArchive(BASE_PATH,
+			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
-			InputStream in = ta.sampleInputStream(date, name);
+			InputStream in = sa.sampleInputStream(date, name);
 			try {
 				sendJsonData(in, response,
 					getSampleReader(name));

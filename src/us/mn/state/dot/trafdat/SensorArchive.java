@@ -34,7 +34,7 @@ import java.util.zip.ZipFile;
  *
  * @author Douglas Lau
  */
-public class TrafficArchive {
+public class SensorArchive {
 
 	/** Traffic file extension */
 	static private final String EXT = ".traffic";
@@ -112,10 +112,10 @@ public class TrafficArchive {
 		return new File(getFilePath(year), date + EXT);
 	}
 
-	/** Process a sensor list request.
+	/** Sensor data archive.
 	 * @param p Base path to sensor data.
 	 * @param d District ID. */
-	public TrafficArchive(String p, String d) {
+	public SensorArchive(String p, String d) {
 		base_path = new File(p, d);
 	}
 
