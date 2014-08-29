@@ -90,6 +90,17 @@ public class TrafdatServlet extends HttpServlet {
 		return name.substring(0, name.length() - 5);
 	}
 
+	/** Create a buffered writer for the response.
+	 * @param response Servlet response.
+	 * @return Buffered writer for the response. */
+	static private Writer createWriter(HttpServletResponse response)
+		throws IOException
+	{
+		OutputStream os = response.getOutputStream();
+		OutputStreamWriter osw = new OutputStreamWriter(os);
+		return new BufferedWriter(osw);
+	}
+
 	/** Initialize the servlet */
 	@Override
 	public void init(ServletConfig config) throws ServletException {
@@ -149,6 +160,10 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processDateRequest(String district, String year,
 		HttpServletResponse response) throws IOException
 	{
+		if (isJsonFile(year)) {
+			return processJsonDates(district, stripJsonExt(year),
+				response);
+		}
 		if (SensorArchive.isValidYear(year)) {
 			SensorArchive sa = new SensorArchive(district);
 			sendTextData(response, sa.lookupDates(year));
@@ -157,15 +172,20 @@ public class TrafdatServlet extends HttpServlet {
 			return false;
 	}
 
-	/** Create a buffered writer for the response.
-	 * @param response Servlet response.
-	 * @return Buffered writer for the response. */
-	static private Writer createWriter(HttpServletResponse response)
-		throws IOException
+	/** Process a request for the available dates for a given year as JSON.
+	 * @param district District ID.
+	 * @param year String year (4 digits, yyyy).
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	private boolean processJsonDates(String district, String year,
+		HttpServletResponse response) throws IOException
 	{
-		OutputStream os = response.getOutputStream();
-		OutputStreamWriter osw = new OutputStreamWriter(os);
-		return new BufferedWriter(osw);
+		if (SensorArchive.isValidYear(year)) {
+			SensorArchive sa = new SensorArchive(district);
+			sendJsonData(response, sa.lookupDates(year));
+			return true;
+		} else
+			return false;
 	}
 
 	/** Process a sensor list request.
