@@ -125,24 +125,36 @@ public class SensorArchive {
 	 * @param name Name of sample file.
 	 * @return true if name is for a binned sample file, otherwise false */
 	static public boolean isBinnedFile(String name) {
-		return isBinnedTraffic(name) || isBinnedPrecipitation(name);
+		return isBinnedTraffic(name)
+		    || isClassification(name)
+		    || isBinnedPrecipitation(name);
 	}
 
 	/** Check if the given file name is a binned traffic file.
 	 * @param name Name of sample file.
 	 * @return true if name is for a binned traffic file, otherwise false */
 	static private boolean isBinnedTraffic(String name) {
-		return name.endsWith(".v30") ||
-		       name.endsWith(".c30") ||
-		       name.endsWith(".s30");
+		return name.endsWith(".v30")
+		    || name.endsWith(".c30")
+		    || name.endsWith(".s30");
+	}
+
+	/** Check if the given file name is for vehicle classification data.
+	 * @param name Name of sample file.
+	 * @return true if name is for vehicle classification data. */
+	static private boolean isClassification(String name) {
+		return name.endsWith(".vmc30")
+		    || name.endsWith(".vs30")
+		    || name.endsWith(".vm30")
+		    || name.endsWith(".vl30");
 	}
 
 	/** Check if the given file name is a binned precipitation file.
 	 * @param name Name of sample file.
 	 * @return true if name is for a binned precipitation file */
 	static private boolean isBinnedPrecipitation(String name) {
-		return name.endsWith(".pr60") ||
-		       name.endsWith(".pt60");
+		return name.endsWith(".pr60")
+		    || name.endsWith(".pt60");
 	}
 
 	/** Create a sample bin for the given file name.
