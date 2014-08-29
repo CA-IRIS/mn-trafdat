@@ -136,6 +136,12 @@ public class TrafdatServlet extends HttpServlet {
 		return name.endsWith(".json");
 	}
 
+	/** Strip the .json extension from a file name */
+	static private String stripJsonExt(String name) {
+		assert name.endsWith(".json");
+		return name.substring(0, name.length() - 5);
+	}
+
 	/** Initialize the servlet */
 	@Override
 	public void init(ServletConfig config) throws ServletException {
@@ -307,9 +313,10 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processSampleRequest(String district, String date,
 		String name, HttpServletResponse response) throws IOException
 	{
-		if (isJsonFile(name))
-			return processJsonRequest(district, date,name,response);
-		else if (SensorArchive.isValidSampleFile(name)) {
+		if (isJsonFile(name)) {
+			return processJsonRequest(district, date,
+				stripJsonExt(name), response);
+		} else if (SensorArchive.isValidSampleFile(name)) {
 			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
 			InputStream in = sa.sampleInputStream(date, name);
@@ -333,7 +340,6 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processJsonRequest(String district, String date,
 		String name, HttpServletResponse response) throws IOException
 	{
-		name = name.substring(0, name.length() - 5);
 		if (SensorArchive.isBinnedFile(name)) {
 			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
