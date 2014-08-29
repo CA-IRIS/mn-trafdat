@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -133,8 +132,8 @@ public class SensorArchive {
 
 	/** Lookup the sensors available for the given date.
 	 * @param date String date (8 digits yyyyMMdd).
-	 * @return A set of sensor IDs available for the date. */
-	public Set<String> lookup(String date) throws IOException {
+	 * @return Iterator of sensor IDs available for the date. */
+	public Iterator<String> lookup(String date) throws IOException {
 		assert date.length() == 8;
 		TreeSet<String> sensors = new TreeSet<String>();
 		File traffic = getTrafficPath(date);
@@ -147,7 +146,7 @@ public class SensorArchive {
 					sensors.add(sensor_id(name));
 			}
 		}
-		return sensors;
+		return sensors.iterator();
 	}
 
 	/** Lookup all the sensors in a .traffic file.

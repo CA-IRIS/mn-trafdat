@@ -23,7 +23,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Iterator;
-import java.util.Set;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -286,24 +285,7 @@ public class TrafdatServlet extends HttpServlet {
 		if (isValidYearDate(year, date)) {
 			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
-			Set<String> sensors = sa.lookup(date);
-			response.setContentType("application/json");
-			Writer w = createWriter(response);
-			try {
-				w.write('[');
-				boolean first = true;
-				for (String s: sensors) {
-					if (!first)
-						w.write(',');
-					w.write('"' + s + '"');
-					first = false;
-				}
-				w.write(']');
-				w.flush();
-			}
-			finally {
-				w.close();
-			}
+			sendJsonData(response, sa.lookup(date));
 			return true;
 		} else
 			return false;
@@ -373,8 +355,7 @@ public class TrafdatServlet extends HttpServlet {
 		if (isBinnedFile(name)) {
 			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
-			Iterator<String> it = sa.sampleIterator(date, name);
-			sendJsonData(response, it);
+			sendJsonData(response, sa.sampleIterator(date, name));
 			return true;
 		} else
 			return false;
@@ -402,9 +383,9 @@ public class TrafdatServlet extends HttpServlet {
 		}
 	}
 
-	/** Send data from the given input stream to the response as JSON.
-	 * @param in Input stream to read data from.
-	 * @param response Servlet response object. */
+	/** Send data from the given iterator to the response as JSON.
+	 * @param response Servlet response object.
+	 * @param it Iterator of values to send. */
 	static private void sendJsonData(HttpServletResponse response,
 		Iterator<String> it) throws IOException
 	{
@@ -414,10 +395,10 @@ public class TrafdatServlet extends HttpServlet {
 			w.write('[');
 			boolean first = true;
 			while (it.hasNext()) {
-				String sam = formatJson(it.next());
+				String val = formatJson(it.next());
 				if (!first)
 					w.write(',');
-				w.write(sam);
+				w.write(val);
 				first = false;
 			}
 			w.write(']');
