@@ -65,8 +65,8 @@ public class TrafdatServlet extends HttpServlet {
 		String[] p = splitPath(pathInfo);
 		// Backward compatibility stuff:
 		//    check if district path was omitted
-		if(p.length > 0 && isValidYear(p[0])) {
-			if(pathInfo.startsWith("/"))
+		if (p.length > 0 && isValidYear(p[0])) {
+			if (pathInfo.startsWith("/"))
 				return splitPath(DEFAULT_DISTRICT + pathInfo);
 			else
 				return splitPath(DEFAULT_DISTRICT+"/"+pathInfo);
@@ -78,8 +78,8 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param p Path
 	 * @return Array of path components. */
 	static private String[] splitPath(String p) {
-		if(p != null) {
-			while(p.startsWith("/"))
+		if (p != null) {
+			while (p.startsWith("/"))
 				p = p.substring(1);
 			return p.split("/");
 		}
@@ -94,7 +94,7 @@ public class TrafdatServlet extends HttpServlet {
 			Integer.parseInt(year);
 			return year.length() == 4;
 		}
-		catch(NumberFormatException e) {
+		catch (NumberFormatException e) {
 			return false;
 		}
 	}
@@ -107,7 +107,7 @@ public class TrafdatServlet extends HttpServlet {
 			Integer.parseInt(date);
 			return date.length() == 8;
 		}
-		catch(NumberFormatException e) {
+		catch (NumberFormatException e) {
 			return false;
 		}
 	}
@@ -167,18 +167,18 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		String pathInfo = request.getPathInfo();
 		try {
-			if(!processRequest(pathInfo, response)) {
+			if (!processRequest(pathInfo, response)) {
 				response.sendError(
 					HttpServletResponse.SC_BAD_REQUEST);
 			}
 		}
-		catch(IOException e) {
+		catch (IOException e) {
 			e.printStackTrace();
 			try {
 				response.sendError(HttpServletResponse.
 					SC_INTERNAL_SERVER_ERROR);
 			}
-			catch(IOException ee) {
+			catch (IOException ee) {
 				ee.printStackTrace();
 			}
 		}
@@ -192,7 +192,7 @@ public class TrafdatServlet extends HttpServlet {
 		HttpServletResponse response) throws IOException
 	{
 		String[] p = splitRequestPath(pathInfo);
-		switch(p.length) {
+		switch (p.length) {
 		case 2:
 			return processDateRequest(p[0], p[1], response);
 		case 3:
@@ -213,9 +213,9 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processDateRequest(String district, String year,
 		HttpServletResponse response) throws IOException
 	{
-		if(isValidYear(year)) {
+		if (isValidYear(year)) {
 			File f = getFilePath(district, year);
-			if(f.canRead() && f.isDirectory())
+			if (f.canRead() && f.isDirectory())
 				writeDates(f, response);
 			return true;
 		} else
@@ -230,9 +230,9 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		Writer w = createWriter(response);
 		try {
-			for(String name: path.list()) {
+			for (String name: path.list()) {
 				String date = getTrafficDate(path, name);
-				if(date != null)
+				if (date != null)
 					w.write(date + "\n");
 			}
 			w.flush();
@@ -258,17 +258,17 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param name Name of file in archive.
 	 * @return Date represented by file, or null */
 	static private String getTrafficDate(File path, String name) {
-		if(name.length() < 8)
+		if (name.length() < 8)
 			return null;
 		String date = name.substring(0, 8);
-		if(!isValidDate(date))
+		if (!isValidDate(date))
 			return null;
 		File file = new File(path, name);
-		if(!file.canRead())
+		if (!file.canRead())
 			return null;
-		if(name.length() == 8 && file.isDirectory())
+		if (name.length() == 8 && file.isDirectory())
 			return date;
-		if(name.length() == 16 && name.endsWith(EXT))
+		if (name.length() == 16 && name.endsWith(EXT))
 			return date;
 		return null;
 	}
@@ -302,12 +302,12 @@ public class TrafdatServlet extends HttpServlet {
 		String date, String name, HttpServletResponse response)
 		throws IOException
 	{
-		if(isValidYearDate(year, date) && isFileNameValid(name)) {
+		if (isValidYearDate(year, date) && isFileNameValid(name)) {
 			try {
 				return processSampleRequest(district, date,
 					name, response);
 			}
-			catch(FileNotFoundException e) {
+			catch (FileNotFoundException e) {
 				response.sendError(
 					HttpServletResponse.SC_NOT_FOUND);
 				return true;
@@ -325,9 +325,9 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processSampleRequest(String district, String date,
 		String name, HttpServletResponse response) throws IOException
 	{
-		if(isJsonFile(name))
+		if (isJsonFile(name))
 			return processJsonRequest(district, date,name,response);
-		else if(isValidSampleFile(name)) {
+		else if (isValidSampleFile(name)) {
 			SensorArchive sa = new SensorArchive(BASE_PATH,
 				district);
 			InputStream in = sa.sampleInputStream(date, name);
