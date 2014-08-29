@@ -29,7 +29,21 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * A servlet for serving IRIS traffic sample data.
+ * A servlet for serving IRIS traffic sample data.  There are several valid
+ * request types:
+ * <pre>
+ *    /district/year.json		Get dates with sample data (JSON)
+ *    /district/year/date		Get sensors sampled for a date (JSON)
+ *    /district/year/date/sensor.ext	Get raw sample data for a sensor
+ *    /district/year/date/sensor.ext.json Get JSON sample data for a sensor
+ * </pre>
+ * There are also some deprecated request types:
+ * <pre>
+ *    /district/year			Get dates with sample data
+ *    /year				Get dates with samples, "tms" district
+ *    /year/date			Get sensors sampled, "tms" district
+ *    /year/date/sensor.ext		Get raw sample data for "tms" district
+ * </pre>
  *
  * @author john3tim
  * @author Douglas Lau
