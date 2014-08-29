@@ -152,13 +152,6 @@ public class SensorArchive {
 		return (i > 0) ? name.substring(0, i) : name;
 	}
 
-	/** Get the file name with .vlog extension.
-	 * @param name Sample file name.
-	 * @return Name of corresponding .vlog sample file. */
-	static private String getVLogName(String name) {
-		return name.substring(0, name.length() - 3) + "vlog";
-	}
-
 	/** Format a number as a string value.
 	 * @param val Number to format.
 	 * @return String value. */
@@ -350,9 +343,9 @@ public class SensorArchive {
 		assert date.length() == 8;
 		SampleBin bin = createSampleBin(name);
 		if (bin != null) {
-			String n = getVLogName(name);
+			String vlog = sensor_id(name) + ".vlog";
 			VehicleEventLog log = createVLog(
-				sampleInputStream(date, n));
+				sampleInputStream(date, vlog));
 			log.bin30SecondSamples(bin);
 			return new ByteArrayInputStream(bin.getData());
 		} else
