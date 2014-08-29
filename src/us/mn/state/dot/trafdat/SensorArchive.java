@@ -43,6 +43,9 @@ public class SensorArchive {
 	/** Path to directory containing traffic data files */
 	static private final String BASE_PATH = "/var/lib/iris/traffic";
 
+	/** Name of trafdat documentation file */
+	static private final String DOC_FILE = "index.html";
+
 	/** Traffic file extension */
 	static private final String EXT = ".traffic";
 
@@ -239,6 +242,12 @@ public class SensorArchive {
 		assert date.length() == 8;
 		String year = date.substring(0, 4);
 		return new File(buildPath(year), date + EXT);
+	}
+
+	/** Get an InputStream for the documenataion.
+	 * @return InputStream from which sample data can be read. */
+	static public InputStream docInputStream() throws IOException {
+		return new FileInputStream(new File(BASE_PATH, DOC_FILE));
 	}
 
 	/** Sensor data archive.

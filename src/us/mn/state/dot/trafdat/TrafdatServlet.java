@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
  * A servlet for serving IRIS traffic sample data.  There are several valid
  * request types:
  * <pre>
+ *    /					Get documentation
  *    /district/year.json		Get dates with sample data (JSON)
  *    /district/year/date		Get sensors sampled for a date (JSON)
  *    /district/year/date/sensor.ext	Get raw sample data for a sensor
@@ -122,7 +123,6 @@ public class TrafdatServlet extends HttpServlet {
 		InputStream in) throws IOException
 	{
 		byte[] buf = new byte[4096];
-		response.setContentType("application/octet-stream");
 		OutputStream out = response.getOutputStream();
 		try {
 			while (true) {
@@ -143,6 +143,7 @@ public class TrafdatServlet extends HttpServlet {
 	static private void sendTextData(HttpServletResponse response,
 		Iterator<String> it) throws IOException
 	{
+		response.setContentType("text/plain");
 		Writer w = createWriter(response);
 		try {
 			while (it.hasNext()) {
@@ -228,6 +229,8 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		String[] p = splitRequestPath(path);
 		switch (p.length) {
+		case 0:
+			return processDocRequest(response);
 		case 2:
 			return processDateRequest(p[0], p[1], response);
 		case 3:
@@ -238,6 +241,17 @@ public class TrafdatServlet extends HttpServlet {
 		default:
 			return false;
 		}
+	}
+
+	/** Process a request for the documentation.
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	private boolean processDocRequest(HttpServletResponse response)
+		throws IOException
+	{
+		response.setContentType("text/html");
+		sendRawData(response, SensorArchive.docInputStream());
+		return true;
 	}
 
 	/** Process a request for the available dates for a given year.
@@ -333,6 +347,7 @@ public class TrafdatServlet extends HttpServlet {
 			return processJsonRequest(district, date,
 				stripJsonExt(name), response);
 		} else if (SensorArchive.isValidSampleFile(name)) {
+			response.setContentType("application/octet-stream");
 			SensorArchive sa = new SensorArchive(district);
 			InputStream in = sa.sampleInputStream(date, name);
 			try {
