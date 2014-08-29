@@ -39,9 +39,6 @@ public class TrafdatServlet extends HttpServlet {
 	/** Maximum length of a data filename */
 	static private final int MAX_FILENAME_LENGTH = 24;
 
-	/** Path to directory containing traffic data files */
-	static private final String BASE_PATH = "/var/lib/iris/traffic";
-
 	/** Default district ID */
 	static private final String DEFAULT_DISTRICT = "tms";
 
@@ -153,8 +150,7 @@ public class TrafdatServlet extends HttpServlet {
 		HttpServletResponse response) throws IOException
 	{
 		if (SensorArchive.isValidYear(year)) {
-			SensorArchive sa = new SensorArchive(BASE_PATH,
-				district);
+			SensorArchive sa = new SensorArchive(district);
 			sendTextData(response, sa.lookupDates(year));
 			return true;
 		} else
@@ -182,8 +178,7 @@ public class TrafdatServlet extends HttpServlet {
 		String date, HttpServletResponse response) throws IOException
 	{
 		if (SensorArchive.isValidYearDate(year, date)) {
-			SensorArchive sa = new SensorArchive(BASE_PATH,
-				district);
+			SensorArchive sa = new SensorArchive(district);
 			sendJsonData(response, sa.lookup(date));
 			return true;
 		} else
@@ -230,8 +225,7 @@ public class TrafdatServlet extends HttpServlet {
 			return processJsonRequest(district, date,
 				stripJsonExt(name), response);
 		} else if (SensorArchive.isValidSampleFile(name)) {
-			SensorArchive sa = new SensorArchive(BASE_PATH,
-				district);
+			SensorArchive sa = new SensorArchive(district);
 			InputStream in = sa.sampleInputStream(date, name);
 			try {
 				sendRawData(response, in);
@@ -254,8 +248,7 @@ public class TrafdatServlet extends HttpServlet {
 		String name, HttpServletResponse response) throws IOException
 	{
 		if (SensorArchive.isBinnedFile(name)) {
-			SensorArchive sa = new SensorArchive(BASE_PATH,
-				district);
+			SensorArchive sa = new SensorArchive(district);
 			sendJsonData(response, sa.sampleIterator(date, name));
 			return true;
 		} else

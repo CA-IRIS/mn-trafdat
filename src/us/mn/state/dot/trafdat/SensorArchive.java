@@ -40,6 +40,9 @@ import java.util.zip.ZipFile;
  */
 public class SensorArchive {
 
+	/** Path to directory containing traffic data files */
+	static private final String BASE_PATH = "/var/lib/iris/traffic";
+
 	/** Traffic file extension */
 	static private final String EXT = ".traffic";
 
@@ -163,14 +166,14 @@ public class SensorArchive {
 		return (val >= 0) ? Integer.toString(val) : null;
 	}
 
-	/** Base sensor data path */
-	private final File base_path;
+	/** Data path for district */
+	private final File dist_path;
 
-	/** Get the file path to the given archive path.
-	 * @param path Archive relative path to file.
+	/** Build a file path to the given archive location.
+	 * @param path District archive relative path to file.
 	 * @return Path to directory in sample archive. */
-	private File getFilePath(String path) {
-		return new File(base_path, path);
+	private File buildPath(String path) {
+		return new File(dist_path, path);
 	}
 
 	/** Get the file path to the given date.
@@ -179,7 +182,7 @@ public class SensorArchive {
 	private File getDatePath(String date) {
 		assert date.length() == 8;
 		String year = date.substring(0, 4);
-		return new File(getFilePath(year), date);
+		return new File(buildPath(year), date);
 	}
 
 	/** Get the file path to the given date traffic file.
@@ -188,14 +191,13 @@ public class SensorArchive {
 	private File getTrafficPath(String date) {
 		assert date.length() == 8;
 		String year = date.substring(0, 4);
-		return new File(getFilePath(year), date + EXT);
+		return new File(buildPath(year), date + EXT);
 	}
 
 	/** Sensor data archive.
-	 * @param p Base path to sensor data.
 	 * @param d District ID. */
-	public SensorArchive(String p, String d) {
-		base_path = new File(p, d);
+	public SensorArchive(String d) {
+		dist_path = new File(BASE_PATH, d);
 	}
 
 	/** Lookup the dates available for a given year.
@@ -204,7 +206,7 @@ public class SensorArchive {
 	public Iterator<String> lookupDates(String year) throws IOException {
 		assert year.length() == 4;
 		TreeSet<String> dates = new TreeSet<String>();
-		File dir = getFilePath(year);
+		File dir = buildPath(year);
 		if (dir.canRead() && dir.isDirectory()) {
 			for (String name: dir.list()) {
 				if (isDateReadable(dir, name)) {
