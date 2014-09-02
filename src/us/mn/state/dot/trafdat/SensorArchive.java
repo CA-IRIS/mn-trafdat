@@ -266,6 +266,11 @@ public class SensorArchive {
 		dist_path = new File(BASE_PATH);
 	}
 
+	/** Check if district is valid */
+	public boolean isValid() {
+		return dist_path.canRead() && dist_path.isDirectory();
+	}
+
 	/** Lookup the available districts.
 	 * @return Iterator of available districts. */
 	public Iterator<String> lookupDistricts() throws IOException {

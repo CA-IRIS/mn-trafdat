@@ -256,10 +256,12 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		if ("districts".equals(districts)) {
 			SensorArchive sa = new SensorArchive();
-			sendJsonData(resp, sa.lookupDistricts());
-			return true;
-		} else
-			return false;
+			if (sa.isValid()) {
+				sendJsonData(resp, sa.lookupDistricts());
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Process a request with 2 path parts.
@@ -286,10 +288,12 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		if (SensorArchive.isValidDate(date)) {
 			SensorArchive sa = new SensorArchive(dist);
-			sendJsonData(resp, sa.lookup(date));
-			return true;
-		} else
-			return false;
+			if (sa.isValid()) {
+				sendJsonData(resp, sa.lookup(date));
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Process a request for the available dates for a given year as JSON.
@@ -304,8 +308,10 @@ public class TrafdatServlet extends HttpServlet {
 			String year = stripJsonExt(yj);
 			if (SensorArchive.isValidYear(year)) {
 				SensorArchive sa = new SensorArchive(dist);
-				sendJsonData(resp, sa.lookupDates(year));
-				return true;
+				if (sa.isValid()) {
+					sendJsonData(resp,sa.lookupDates(year));
+					return true;
+				}
 			}
 		}
 		return false;
@@ -321,10 +327,12 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		if (SensorArchive.isValidYear(year)) {
 			SensorArchive sa = new SensorArchive(dist);
-			sendTextData(resp, sa.lookupDates(year));
-			return true;
-		} else
-			return false;
+			if (sa.isValid()) {
+				sendTextData(resp, sa.lookupDates(year));
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Process a request with 3 path parts.
@@ -398,16 +406,19 @@ public class TrafdatServlet extends HttpServlet {
 		} else if (SensorArchive.isValidSampleFile(name)) {
 			resp.setContentType("application/octet-stream");
 			SensorArchive sa = new SensorArchive(dist);
-			InputStream in = sa.sampleInputStream(date, name);
-			try {
-				sendRawData(resp, in);
+			if (sa.isValid()) {
+				InputStream in = sa.sampleInputStream(date,
+					name);
+				try {
+					sendRawData(resp, in);
+				}
+				finally {
+					in.close();
+				}
+				return true;
 			}
-			finally {
-				in.close();
-			}
-			return true;
-		} else
-			return false;
+		}
+		return false;
 	}
 
 	/** Process a JSON data request.
@@ -421,9 +432,12 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		if (SensorArchive.isBinnedFile(name)) {
 			SensorArchive sa = new SensorArchive(dist);
-			sendJsonData(resp, sa.sampleIterator(date, name));
-			return true;
-		} else
-			return false;
+			if (sa.isValid()) {
+				sendJsonData(resp, sa.sampleIterator(date,
+					name));
+				return true;
+			}
+		}
+		return false;
 	}
 }
