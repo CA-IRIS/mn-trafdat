@@ -50,8 +50,8 @@ public class SensorArchive {
 	static private final String EXT = ".traffic";
 
 	/** Check if a file name is canonical */
-	static private boolean isCanonical(String name) throws IOException {
-		return name.equals(new File(name).getCanonicalPath());
+	static private boolean isCanonical(File f) throws IOException {
+		return f.getPath().equals(f.getCanonicalPath());
 	}
 
 	/** Check if sensor data exists for a given date.
@@ -271,8 +271,8 @@ public class SensorArchive {
 	public Iterator<String> lookupDistricts() throws IOException {
 		TreeSet<String> dists = new TreeSet<String>();
 		for (String n: dist_path.list()) {
-			File d = new  File(n);
-			if (d.canRead() && d.isDirectory() && isCanonical(n))
+			File d = buildPath(n);
+			if (d.canRead() && d.isDirectory() && isCanonical(d))
 				dists.add(n);
 		}
 		return dists.iterator();
