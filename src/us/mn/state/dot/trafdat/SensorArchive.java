@@ -97,7 +97,7 @@ public class SensorArchive {
 	/** Check if the given date is valid.
 	 * @param date String date (8 digits yyyyMMdd)
 	 * @return true if date is valid, otherwise false */
-	static private boolean isValidDate(String date) {
+	static public boolean isValidDate(String date) {
 		try {
 			Integer.parseInt(date);
 			return date.length() == 8;

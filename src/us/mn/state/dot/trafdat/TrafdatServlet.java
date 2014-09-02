@@ -232,9 +232,9 @@ public class TrafdatServlet extends HttpServlet {
 		case 0:
 			return processDocRequest(response);
 		case 2:
-			return processDateRequest(p[0], p[1], response);
+			return processRequest2(p[0], p[1], response);
 		case 3:
-			return processSensorRequest(p[0], p[1], p[2], response);
+			return processRequest3(p[0], p[1], p[2], response);
 		case 4:
 			return processSampleRequest(p[0], p[1], p[2], p[3],
 				response);
@@ -254,6 +254,54 @@ public class TrafdatServlet extends HttpServlet {
 		return true;
 	}
 
+	/** Process a request with 2 path parts.
+	 * @param district District ID.
+	 * @param p2 Second path part.
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	private boolean processRequest2(String district, String p2,
+		HttpServletResponse response) throws IOException
+	{
+		return processSensorRequest(district, p2, response)
+		    || processJsonDates(district, p2, response)
+		    || processDateRequest(district, p2, response);
+	}
+
+	/** Process a sensor list request.
+	 * @param district District ID.
+	 * @param date String date (8 digits yyyyMMdd).
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	private boolean processSensorRequest(String district, String date,
+		HttpServletResponse response) throws IOException
+	{
+		if (SensorArchive.isValidDate(date)) {
+			SensorArchive sa = new SensorArchive(district);
+			sendJsonData(response, sa.lookup(date));
+			return true;
+		} else
+			return false;
+	}
+
+	/** Process a request for the available dates for a given year as JSON.
+	 * @param district District ID.
+	 * @param yj Year + .json extension (yyyy.json).
+	 * @param response Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	private boolean processJsonDates(String district, String yj,
+		HttpServletResponse response) throws IOException
+	{
+		if (isJsonFile(yj)) {
+			String year = stripJsonExt(yj);
+			if (SensorArchive.isValidYear(year)) {
+				SensorArchive sa = new SensorArchive(district);
+				sendJsonData(response, sa.lookupDates(year));
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** Process a request for the available dates for a given year.
 	 * @param district District ID.
 	 * @param year String year (4 digits, yyyy).
@@ -262,10 +310,6 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processDateRequest(String district, String year,
 		HttpServletResponse response) throws IOException
 	{
-		if (isJsonFile(year)) {
-			return processJsonDates(district, stripJsonExt(year),
-				response);
-		}
 		if (SensorArchive.isValidYear(year)) {
 			SensorArchive sa = new SensorArchive(district);
 			sendTextData(response, sa.lookupDates(year));
@@ -274,20 +318,16 @@ public class TrafdatServlet extends HttpServlet {
 			return false;
 	}
 
-	/** Process a request for the available dates for a given year as JSON.
+	/** Process a sensor list request.
 	 * @param district District ID.
-	 * @param year String year (4 digits, yyyy).
+	 * @param p2 Second path part.
+	 * @param p3 Third path part.
 	 * @param response Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processJsonDates(String district, String year,
-		HttpServletResponse response) throws IOException
+	private boolean processRequest3(String district, String p2,
+		String p3, HttpServletResponse response) throws IOException
 	{
-		if (SensorArchive.isValidYear(year)) {
-			SensorArchive sa = new SensorArchive(district);
-			sendJsonData(response, sa.lookupDates(year));
-			return true;
-		} else
-			return false;
+		return processSensorRequest(district, p2, p3, response);
 	}
 
 	/** Process a sensor list request.
@@ -299,12 +339,8 @@ public class TrafdatServlet extends HttpServlet {
 	private boolean processSensorRequest(String district, String year,
 		String date, HttpServletResponse response) throws IOException
 	{
-		if (SensorArchive.isValidYearDate(year, date)) {
-			SensorArchive sa = new SensorArchive(district);
-			sendJsonData(response, sa.lookup(date));
-			return true;
-		} else
-			return false;
+		return SensorArchive.isValidYearDate(year, date)
+		    && processSensorRequest(district, date, response);
 	}
 
 	/** Process a sample data request.
