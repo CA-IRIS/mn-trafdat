@@ -30,21 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * A servlet for serving IRIS traffic sample data.  There are several valid
- * request types:
- * <pre>
- *    /					Get documentation
- *    /district/year.json		Get dates with sample data (JSON)
- *    /district/year/date		Get sensors sampled for a date (JSON)
- *    /district/year/date/sensor.ext	Get raw sample data for a sensor
- *    /district/year/date/sensor.ext.json Get JSON sample data for a sensor
- * </pre>
- * There are also some deprecated request types:
- * <pre>
- *    /district/year			Get dates with sample data
- *    /year				Get dates with samples, "tms" district
- *    /year/date			Get sensors sampled, "tms" district
- *    /year/date/sensor.ext		Get raw sample data for "tms" district
- * </pre>
+ * request types.
  *
  * @author john3tim
  * @author Douglas Lau
@@ -106,24 +92,24 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Create a buffered writer for the response.
-	 * @param response Servlet response.
+	 * @param resp Servlet response.
 	 * @return Buffered writer for the response. */
-	static private Writer createWriter(HttpServletResponse response)
+	static private Writer createWriter(HttpServletResponse resp)
 		throws IOException
 	{
-		OutputStream os = response.getOutputStream();
+		OutputStream os = resp.getOutputStream();
 		OutputStreamWriter osw = new OutputStreamWriter(os);
 		return new BufferedWriter(osw);
 	}
 
 	/** Send raw data from the given input stream to the response.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @param in Input stream to read data from. */
-	static private void sendRawData(HttpServletResponse response,
+	static private void sendRawData(HttpServletResponse resp,
 		InputStream in) throws IOException
 	{
 		byte[] buf = new byte[4096];
-		OutputStream out = response.getOutputStream();
+		OutputStream out = resp.getOutputStream();
 		try {
 			while (true) {
 				int n_bytes = in.read(buf);
@@ -138,13 +124,13 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Send text data from the given iterator to the response.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @param it Iterator of values to send. */
-	static private void sendTextData(HttpServletResponse response,
+	static private void sendTextData(HttpServletResponse resp,
 		Iterator<String> it) throws IOException
 	{
-		response.setContentType("text/plain");
-		Writer w = createWriter(response);
+		resp.setContentType("text/plain");
+		Writer w = createWriter(resp);
 		try {
 			while (it.hasNext()) {
 				String val = it.next();
@@ -158,13 +144,13 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Send data from the given iterator to the response as JSON.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @param it Iterator of values to send. */
-	static private void sendJsonData(HttpServletResponse response,
+	static private void sendJsonData(HttpServletResponse resp,
 		Iterator<String> it) throws IOException
 	{
-		response.setContentType("application/json");
-		Writer w = createWriter(response);
+		resp.setContentType("application/json");
+		Writer w = createWriter(resp);
 		try {
 			w.write('[');
 			boolean first = true;
@@ -198,20 +184,18 @@ public class TrafdatServlet extends HttpServlet {
 
 	/** Process an HTTP GET request */
 	@Override
-	public void doGet(HttpServletRequest request,
-		HttpServletResponse response)
-	{
-		String path = request.getPathInfo();
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) {
+		String path = req.getPathInfo();
 		try {
-			if (!processRequest(path, response)) {
-				response.sendError(
+			if (!processRequest(path, resp)) {
+				resp.sendError(
 					HttpServletResponse.SC_BAD_REQUEST);
 			}
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 			try {
-				response.sendError(HttpServletResponse.
+				resp.sendError(HttpServletResponse.
 					SC_INTERNAL_SERVER_ERROR);
 			}
 			catch (IOException ee) {
@@ -222,80 +206,80 @@ public class TrafdatServlet extends HttpServlet {
 
 	/** Process a traffic data request from a client.
 	 * @param path Path of requested resource.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processRequest(String path,
-		HttpServletResponse response) throws IOException
+	private boolean processRequest(String path, HttpServletResponse resp)
+		throws IOException
 	{
 		String[] p = splitRequestPath(path);
 		switch (p.length) {
 		case 0:
-			return processDocRequest(response);
+			return processDocRequest(resp);
 		case 2:
-			return processRequest2(p[0], p[1], response);
+			return processRequest2(p[0], p[1], resp);
 		case 3:
-			return processRequest3(p[0], p[1], p[2], response);
+			return processRequest3(p[0], p[1], p[2], resp);
 		case 4:
 			return processSampleRequest(p[0], p[1], p[2], p[3],
-				response);
+				resp);
 		default:
 			return false;
 		}
 	}
 
 	/** Process a request for the documentation.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processDocRequest(HttpServletResponse response)
+	private boolean processDocRequest(HttpServletResponse resp)
 		throws IOException
 	{
-		response.setContentType("text/html");
-		sendRawData(response, SensorArchive.docInputStream());
+		resp.setContentType("text/html");
+		sendRawData(resp, SensorArchive.docInputStream());
 		return true;
 	}
 
 	/** Process a request with 2 path parts.
-	 * @param district District ID.
+	 * @param dist District ID.
 	 * @param p2 Second path part.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processRequest2(String district, String p2,
-		HttpServletResponse response) throws IOException
+	private boolean processRequest2(String dist, String p2,
+		HttpServletResponse resp) throws IOException
 	{
-		return processSensorRequest(district, p2, response)
-		    || processJsonDates(district, p2, response)
-		    || processDateRequest(district, p2, response);
+		return processSensorRequest(dist, p2, resp)
+		    || processJsonDates(dist, p2, resp)
+		    || processDateRequest(dist, p2, resp);
 	}
 
 	/** Process a sensor list request.
-	 * @param district District ID.
+	 * @param dist District ID.
 	 * @param date String date (8 digits yyyyMMdd).
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processSensorRequest(String district, String date,
-		HttpServletResponse response) throws IOException
+	private boolean processSensorRequest(String dist, String date,
+		HttpServletResponse resp) throws IOException
 	{
 		if (SensorArchive.isValidDate(date)) {
-			SensorArchive sa = new SensorArchive(district);
-			sendJsonData(response, sa.lookup(date));
+			SensorArchive sa = new SensorArchive(dist);
+			sendJsonData(resp, sa.lookup(date));
 			return true;
 		} else
 			return false;
 	}
 
 	/** Process a request for the available dates for a given year as JSON.
-	 * @param district District ID.
+	 * @param dist District ID.
 	 * @param yj Year + .json extension (yyyy.json).
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processJsonDates(String district, String yj,
-		HttpServletResponse response) throws IOException
+	private boolean processJsonDates(String dist, String yj,
+		HttpServletResponse resp) throws IOException
 	{
 		if (isJsonFile(yj)) {
 			String year = stripJsonExt(yj);
 			if (SensorArchive.isValidYear(year)) {
-				SensorArchive sa = new SensorArchive(district);
-				sendJsonData(response, sa.lookupDates(year));
+				SensorArchive sa = new SensorArchive(dist);
+				sendJsonData(resp, sa.lookupDates(year));
 				return true;
 			}
 		}
@@ -303,66 +287,66 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a request for the available dates for a given year.
-	 * @param district District ID.
+	 * @param dist District ID.
 	 * @param year String year (4 digits, yyyy).
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processDateRequest(String district, String year,
-		HttpServletResponse response) throws IOException
+	private boolean processDateRequest(String dist, String year,
+		HttpServletResponse resp) throws IOException
 	{
 		if (SensorArchive.isValidYear(year)) {
-			SensorArchive sa = new SensorArchive(district);
-			sendTextData(response, sa.lookupDates(year));
+			SensorArchive sa = new SensorArchive(dist);
+			sendTextData(resp, sa.lookupDates(year));
 			return true;
 		} else
 			return false;
 	}
 
 	/** Process a sensor list request.
-	 * @param district District ID.
+	 * @param dist District ID.
 	 * @param p2 Second path part.
 	 * @param p3 Third path part.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processRequest3(String district, String p2,
-		String p3, HttpServletResponse response) throws IOException
+	private boolean processRequest3(String dist, String p2,
+		String p3, HttpServletResponse resp) throws IOException
 	{
-		return processSensorRequest(district, p2, p3, response);
+		return processSensorRequest(dist, p2, p3, resp);
 	}
 
 	/** Process a sensor list request.
-	 * @param district District ID.
+	 * @param dist District ID.
 	 * @param year String year (4 digits, yyyy).
 	 * @param date String date (8 digits yyyyMMdd).
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processSensorRequest(String district, String year,
-		String date, HttpServletResponse response) throws IOException
+	private boolean processSensorRequest(String dist, String year,
+		String date, HttpServletResponse resp) throws IOException
 	{
 		return SensorArchive.isValidYearDate(year, date)
-		    && processSensorRequest(district, date, response);
+		    && processSensorRequest(dist, date, resp);
 	}
 
 	/** Process a sample data request.
-	 * @param district District ID.
+	 * @param dist District ID.
 	 * @param year String year (4 digits, yyyy).
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processSampleRequest(String district, String year,
-		String date, String name, HttpServletResponse response)
+	private boolean processSampleRequest(String dist, String year,
+		String date, String name, HttpServletResponse resp)
 		throws IOException
 	{
 		if (SensorArchive.isValidYearDate(year, date) &&
 		    isFileNameValid(name))
 		{
 			try {
-				return processSampleRequest(district, date,
-					name, response);
+				return processSampleRequest(dist, date, name,
+					resp);
 			}
 			catch (FileNotFoundException e) {
-				response.sendError(
+				resp.sendError(
 					HttpServletResponse.SC_NOT_FOUND);
 				return true;
 			}
@@ -371,23 +355,23 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a sample data request.
-	 * @param district District ID.
+	 * @param dist District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processSampleRequest(String district, String date,
-		String name, HttpServletResponse response) throws IOException
+	private boolean processSampleRequest(String dist, String date,
+		String name, HttpServletResponse resp) throws IOException
 	{
 		if (isJsonFile(name)) {
-			return processJsonRequest(district, date,
-				stripJsonExt(name), response);
+			return processJsonRequest(dist, date,
+				stripJsonExt(name), resp);
 		} else if (SensorArchive.isValidSampleFile(name)) {
-			response.setContentType("application/octet-stream");
-			SensorArchive sa = new SensorArchive(district);
+			resp.setContentType("application/octet-stream");
+			SensorArchive sa = new SensorArchive(dist);
 			InputStream in = sa.sampleInputStream(date, name);
 			try {
-				sendRawData(response, in);
+				sendRawData(resp, in);
 				return true;
 			}
 			finally {
@@ -398,17 +382,17 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a JSON data request.
-	 * @param district District ID.
+	 * @param dist District ID.
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param name Sample file name.
-	 * @param response Servlet response object.
+	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processJsonRequest(String district, String date,
-		String name, HttpServletResponse response) throws IOException
+	private boolean processJsonRequest(String dist, String date,
+		String name, HttpServletResponse resp) throws IOException
 	{
 		if (SensorArchive.isBinnedFile(name)) {
-			SensorArchive sa = new SensorArchive(district);
-			sendJsonData(response, sa.sampleIterator(date, name));
+			SensorArchive sa = new SensorArchive(dist);
+			sendJsonData(resp, sa.sampleIterator(date, name));
 			return true;
 		} else
 			return false;
