@@ -1,6 +1,6 @@
 /*
  * Project: Trafdat
- * Copyright (C) 2007-2011  Minnesota Department of Transportation
+ * Copyright (C) 2007-2014  Minnesota Department of Transportation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -132,7 +132,7 @@ public class VehicleEvent {
 
 	/** Set the headway if not already set */
 	public void setHeadway(int h) {
-		if(headway == null && h > 0)
+		if (headway == null)
 			headway = h;
 	}
 
