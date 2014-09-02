@@ -247,8 +247,8 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		assert p.length == 2;
 		return processSensorReq(p[0], p[1], resp)
-		    || processJsonDates(p[0], p[1], resp)
-		    || processDateReq(p[0], p[1], resp);
+		    || processJsonDateReq(p[0], p[1], resp)
+		    || processTextDateReq(p[0], p[1], resp);
 	}
 
 	/** Process a sensor list request.
@@ -272,7 +272,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param yj Year + .json extension (yyyy.json).
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processJsonDates(String dist, String yj,
+	private boolean processJsonDateReq(String dist, String yj,
 		HttpServletResponse resp) throws IOException
 	{
 		if (isJsonFile(yj)) {
@@ -291,7 +291,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param year String year (4 digits, yyyy).
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processDateReq(String dist, String year,
+	private boolean processTextDateReq(String dist, String year,
 		HttpServletResponse resp) throws IOException
 	{
 		if (SensorArchive.isValidYear(year)) {
