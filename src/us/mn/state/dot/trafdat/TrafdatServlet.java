@@ -187,7 +187,7 @@ public class TrafdatServlet extends HttpServlet {
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) {
 		String path = req.getPathInfo();
 		try {
-			if (!processRequest(path, resp)) {
+			if (!processReq(path, resp)) {
 				resp.sendError(
 					HttpServletResponse.SC_BAD_REQUEST);
 			}
@@ -208,19 +208,19 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param path Path of requested resource.
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processRequest(String path, HttpServletResponse resp)
+	private boolean processReq(String path, HttpServletResponse resp)
 		throws IOException
 	{
 		String[] p = splitRequestPath(path);
 		switch (p.length) {
 		case 0:
-			return processDocRequest(resp);
+			return processDocReq(resp);
 		case 2:
-			return processRequest2(p, resp);
+			return processReq2(p, resp);
 		case 3:
-			return processRequest3(p, resp);
+			return processReq3(p, resp);
 		case 4:
-			return processSampleRequest(p[0], p[1], p[2], p[3],
+			return processSampleReq(p[0], p[1], p[2], p[3],
 				resp);
 		default:
 			return false;
@@ -230,7 +230,7 @@ public class TrafdatServlet extends HttpServlet {
 	/** Process a request for the documentation.
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processDocRequest(HttpServletResponse resp)
+	private boolean processDocReq(HttpServletResponse resp)
 		throws IOException
 	{
 		resp.setContentType("text/html");
@@ -242,13 +242,13 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param p Path array.
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processRequest2(String[] p, HttpServletResponse resp)
+	private boolean processReq2(String[] p, HttpServletResponse resp)
 		throws IOException
 	{
 		assert p.length == 2;
-		return processSensorRequest(p[0], p[1], resp)
+		return processSensorReq(p[0], p[1], resp)
 		    || processJsonDates(p[0], p[1], resp)
-		    || processDateRequest(p[0], p[1], resp);
+		    || processDateReq(p[0], p[1], resp);
 	}
 
 	/** Process a sensor list request.
@@ -256,7 +256,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processSensorRequest(String dist, String date,
+	private boolean processSensorReq(String dist, String date,
 		HttpServletResponse resp) throws IOException
 	{
 		if (SensorArchive.isValidDate(date)) {
@@ -291,7 +291,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param year String year (4 digits, yyyy).
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processDateRequest(String dist, String year,
+	private boolean processDateReq(String dist, String year,
 		HttpServletResponse resp) throws IOException
 	{
 		if (SensorArchive.isValidYear(year)) {
@@ -306,11 +306,11 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param p Path array.
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processRequest3(String[] p, HttpServletResponse resp)
+	private boolean processReq3(String[] p, HttpServletResponse resp)
 		throws IOException
 	{
 		assert p.length == 2;
-		return processSensorRequest(p[0], p[1], p[2], resp);
+		return processSensorReq(p[0], p[1], p[2], resp);
 	}
 
 	/** Process a sensor list request.
@@ -319,11 +319,11 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param date String date (8 digits yyyyMMdd).
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processSensorRequest(String dist, String year,
+	private boolean processSensorReq(String dist, String year,
 		String date, HttpServletResponse resp) throws IOException
 	{
 		return SensorArchive.isValidYearDate(year, date)
-		    && processSensorRequest(dist, date, resp);
+		    && processSensorReq(dist, date, resp);
 	}
 
 	/** Process a sample data request.
@@ -333,7 +333,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param name Sample file name.
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processSampleRequest(String dist, String year,
+	private boolean processSampleReq(String dist, String year,
 		String date, String name, HttpServletResponse resp)
 		throws IOException
 	{
@@ -341,7 +341,7 @@ public class TrafdatServlet extends HttpServlet {
 		    isFileNameValid(name))
 		{
 			try {
-				return processSampleRequest(dist, date, name,
+				return processSampleReq(dist, date, name,
 					resp);
 			}
 			catch (FileNotFoundException e) {
@@ -359,11 +359,11 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param name Sample file name.
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processSampleRequest(String dist, String date,
+	private boolean processSampleReq(String dist, String date,
 		String name, HttpServletResponse resp) throws IOException
 	{
 		if (isJsonFile(name)) {
-			return processJsonRequest(dist, date,
+			return processJsonReq(dist, date,
 				stripJsonExt(name), resp);
 		} else if (SensorArchive.isValidSampleFile(name)) {
 			resp.setContentType("application/octet-stream");
@@ -386,7 +386,7 @@ public class TrafdatServlet extends HttpServlet {
 	 * @param name Sample file name.
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processJsonRequest(String dist, String date,
+	private boolean processJsonReq(String dist, String date,
 		String name, HttpServletResponse resp) throws IOException
 	{
 		if (SensorArchive.isBinnedFile(name)) {
