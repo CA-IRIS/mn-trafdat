@@ -216,9 +216,9 @@ public class TrafdatServlet extends HttpServlet {
 		case 0:
 			return processDocRequest(resp);
 		case 2:
-			return processRequest2(p[0], p[1], resp);
+			return processRequest2(p, resp);
 		case 3:
-			return processRequest3(p[0], p[1], p[2], resp);
+			return processRequest3(p, resp);
 		case 4:
 			return processSampleRequest(p[0], p[1], p[2], p[3],
 				resp);
@@ -239,16 +239,16 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a request with 2 path parts.
-	 * @param dist District ID.
-	 * @param p2 Second path part.
+	 * @param p Path array.
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processRequest2(String dist, String p2,
-		HttpServletResponse resp) throws IOException
+	private boolean processRequest2(String[] p, HttpServletResponse resp)
+		throws IOException
 	{
-		return processSensorRequest(dist, p2, resp)
-		    || processJsonDates(dist, p2, resp)
-		    || processDateRequest(dist, p2, resp);
+		assert p.length == 2;
+		return processSensorRequest(p[0], p[1], resp)
+		    || processJsonDates(p[0], p[1], resp)
+		    || processDateRequest(p[0], p[1], resp);
 	}
 
 	/** Process a sensor list request.
@@ -303,15 +303,14 @@ public class TrafdatServlet extends HttpServlet {
 	}
 
 	/** Process a sensor list request.
-	 * @param dist District ID.
-	 * @param p2 Second path part.
-	 * @param p3 Third path part.
+	 * @param p Path array.
 	 * @param resp Servlet response object.
 	 * @return true if request if valid, otherwise false */
-	private boolean processRequest3(String dist, String p2,
-		String p3, HttpServletResponse resp) throws IOException
+	private boolean processRequest3(String[] p, HttpServletResponse resp)
+		throws IOException
 	{
-		return processSensorRequest(dist, p2, p3, resp);
+		assert p.length == 2;
+		return processSensorRequest(p[0], p[1], p[2], resp);
 	}
 
 	/** Process a sensor list request.
