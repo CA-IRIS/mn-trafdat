@@ -51,8 +51,8 @@ public class TrafdatServlet extends HttpServlet {
 			while (path.startsWith("/"))
 				path = path.substring(1);
 			return path.split("/");
-		}
-		return new String[0];
+		} else
+			return "".split("/");
 	}
 
 	/** Check if the given file name is valid.
@@ -207,8 +207,6 @@ public class TrafdatServlet extends HttpServlet {
 	{
 		String[] p = splitPath(path);
 		switch (p.length) {
-		case 0:
-			return processDocReq(resp);
 		case 1:
 			return processReq1(p, resp);
 		case 2:
@@ -222,17 +220,6 @@ public class TrafdatServlet extends HttpServlet {
 		}
 	}
 
-	/** Process a request for the documentation.
-	 * @param resp Servlet response object.
-	 * @return true if request if valid, otherwise false */
-	private boolean processDocReq(HttpServletResponse resp)
-		throws IOException
-	{
-		resp.setContentType("text/html");
-		sendRawData(resp, SensorArchive.docInputStream());
-		return true;
-	}
-
 	/** Process a request with 1 path part.
 	 * @param p Path array.
 	 * @param resp Servlet response object.
@@ -241,8 +228,23 @@ public class TrafdatServlet extends HttpServlet {
 		throws IOException
 	{
 		assert p.length == 1;
-		return processDistReq(p[0], resp)
+		return processDocReq(p[0], resp)
+		    || processDistReq(p[0], resp)
 		    || processTextDateReq(DEFAULT_DIST, p[0], resp);
+	}
+
+	/** Process a request for the documentation.
+	 * @param resp Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	private boolean processDocReq(String d, HttpServletResponse resp)
+		throws IOException
+	{
+		if ("".equals(d)) {
+			resp.setContentType("text/html");
+			sendRawData(resp, SensorArchive.docInputStream());
+			return true;
+		} else
+			return false;
 	}
 
 	/** Process a request for the available districts.
