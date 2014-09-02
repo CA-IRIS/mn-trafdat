@@ -241,7 +241,23 @@ public class TrafdatServlet extends HttpServlet {
 		throws IOException
 	{
 		assert p.length == 1;
-		return processTextDateReq(DEFAULT_DIST, p[0], resp);
+		return processDistReq(p[0], resp)
+		    || processTextDateReq(DEFAULT_DIST, p[0], resp);
+	}
+
+	/** Process a request for the available districts.
+	 * @param districts District path.
+	 * @param resp Servlet response object.
+	 * @return true if request if valid, otherwise false */
+	private boolean processDistReq(String districts,
+		HttpServletResponse resp) throws IOException
+	{
+		if ("districts".equals(districts)) {
+			SensorArchive sa = new SensorArchive();
+			sendJsonData(resp, sa.lookupDistricts());
+			return true;
+		} else
+			return false;
 	}
 
 	/** Process a request with 2 path parts.

@@ -49,6 +49,11 @@ public class SensorArchive {
 	/** Traffic file extension */
 	static private final String EXT = ".traffic";
 
+	/** Check if a file name is canonical */
+	static private boolean isCanonical(String name) throws IOException {
+		return name.equals(new File(name).getCanonicalPath());
+	}
+
 	/** Check if sensor data exists for a given date.
 	 * @param path Path to year archive.
 	 * @param name Name of file in archive.
@@ -254,6 +259,23 @@ public class SensorArchive {
 	 * @param d District ID. */
 	public SensorArchive(String d) {
 		dist_path = new File(BASE_PATH, d);
+	}
+
+	/** Sensor data archive */
+	public SensorArchive() {
+		dist_path = new File(BASE_PATH);
+	}
+
+	/** Lookup the available districts.
+	 * @return Iterator of available districts. */
+	public Iterator<String> lookupDistricts() throws IOException {
+		TreeSet<String> dists = new TreeSet<String>();
+		for (String n: dist_path.list()) {
+			File d = new  File(n);
+			if (d.canRead() && d.isDirectory() && isCanonical(n))
+				dists.add(n);
+		}
+		return dists.iterator();
 	}
 
 	/** Lookup the dates available for a given year.
